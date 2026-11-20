@@ -1,574 +1,761 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="h-full">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Corretor Visual IA - Correção de Provas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Corretor Visual IA - Correção Inteligente de Provas</title>
+  
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Awesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Google Fonts: Inter -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
   <script>
     tailwind.config = {
       theme: {
         extend: {
           fontFamily: {
             sans: ['Inter', 'sans-serif'],
+            display: ['Plus Jakarta Sans', 'sans-serif'],
           },
           colors: {
             brand: {
-              50: '#eef2ff',
-              100: '#e0e7ff',
-              500: '#6366f1',
-              600: '#4f46e5',
-              700: '#4338ca',
-              900: '#312e81',
+              50: '#EEF2FF',
+              100: '#E0E7FF',
+              500: '#6366F1',
+              600: '#4F46E5',
+              700: '#4338CA',
+            },
+            correct: {
+              50: '#ECFDF5',
+              100: '#D1FAE5',
+              500: '#10B981',
+              600: '#059669',
+            },
+            partial: {
+              50: '#FFFBEB',
+              100: '#FEF3C7',
+              500: '#F59E0B',
+              600: '#D97706',
+            },
+            wrong: {
+              50: '#FFF1F2',
+              100: '#FFE4E6',
+              500: '#F43F5E',
+              600: '#E11D48',
             }
+          },
+          boxShadow: {
+            'subtle': '0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.05)',
+            'card': '0 4px 6px -1px rgba(15, 23, 42, 0.04), 0 2px 4px -2px rgba(15, 23, 42, 0.04)',
+            'float': '0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.05)',
           }
         }
       }
     }
   </script>
+
   <style>
-    /* Transições suaves e ajustes de canvas */
-    .box-correct { border-color: #22c55e; background-color: rgba(34, 197, 94, 0.25); }
-    .box-partial { border-color: #eab308; background-color: rgba(234, 179, 8, 0.25); }
-    .box-wrong { border-color: #ef4444; background-color: rgba(239, 68, 68, 0.25); }
-    
-    .scanner-line {
-      height: 3px;
-      background: linear-gradient(90deg, transparent, #6366f1, transparent);
-      animation: scan 2s linear infinite;
+    /* Transições suaves e bounding boxes */
+    .box-correct {
+      border-color: #10B981;
+      background-color: rgba(16, 185, 129, 0.15);
     }
-    @keyframes scan {
-      0% { top: 0%; opacity: 0.8; }
-      50% { opacity: 1; }
-      100% { top: 98%; opacity: 0.8; }
+    .box-partial {
+      border-color: #F59E0B;
+      background-color: rgba(245, 158, 11, 0.18);
     }
-    
+    .box-wrong {
+      border-color: #F43F5E;
+      background-color: rgba(244, 63, 94, 0.15);
+    }
+
     /* Custom Scrollbar */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #1e293b; }
-    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+    ::-webkit-scrollbar-track { background: #F1F5F9; }
+    ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+    /* Touch & Animation tweaks */
+    .touch-callout-none { -webkit-touch-callout: none; }
+    @keyframes pulseSoft {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .animate-pulse-soft { animation: pulseSoft 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col justify-between selection:bg-brand-500 selection:text-white">
+<body class="bg-slate-50 text-slate-800 font-sans min-h-full flex flex-col justify-between selection:bg-brand-500 selection:text-white pb-20 md:pb-6">
 
-  <!-- TOP HEADER -->
-  <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-30">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-brand-500/30">
-          <i class="fa-solid font-bold text-white text-xl"></i>
-          <i class="fa-solid fa-graduation-cap text-white text-lg"></i>
+  <!-- TOP Slim Translucent Header -->
+  <header class="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between">
+      
+      <!-- Logo & Title -->
+      <div class="flex items-center space-x-2.5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
         </div>
         <div>
-          <h1 class="text-lg font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent leading-tight">
-            Corretor Visual IA
+          <h1 class="text-base font-extrabold font-display text-slate-900 tracking-tight leading-none">
+            Corretor Visual <span class="text-brand-600">IA</span>
           </h1>
-          <p class="text-xs text-slate-400">Correção Inteligente de Provas & Avaliações</p>
+          <p class="text-[11px] text-slate-500 font-medium mt-0.5">Correção Inteligente de Provas</p>
         </div>
       </div>
 
+      <!-- Mode Pill & Settings Trigger -->
       <div class="flex items-center space-x-2">
-        <!-- Indicador de Status da API -->
-        <button id="btnOpenConfig" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition flex items-center space-x-2">
+        <!-- Status Gabarito Pill -->
+        <div id="headerModePill" class="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <span id="headerModeText">Leitura Autônoma</span>
+        </div>
+
+        <!-- API Config Button -->
+        <button id="btnOpenConfig" onclick="openConfigModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold border border-slate-200 transition flex items-center space-x-2">
           <span id="apiStatusDot" class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
-          <span id="apiStatusText" class="hidden sm:inline">Configurar API</span>
-          <i class="fa-solid fa-gear text-slate-400"></i>
+          <span class="hidden sm:inline" id="apiStatusText">Configurar API</span>
+          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- APP NAVIGATION TABS -->
-  <nav class="bg-slate-900 border-b border-slate-800 px-4">
-    <div class="max-w-7xl mx-auto flex space-x-2 sm:space-x-4 overflow-x-auto py-2">
-      <button id="tabBtnCorrigir" onclick="switchTab('corrigir')" class="tab-btn px-4 py-2 rounded-lg font-medium text-sm transition flex items-center space-x-2 bg-brand-600 text-white shadow-md">
-        <i class="fa-solid fa-camera"></i>
+  <!-- Desktop Segmented Navigation (Hidden on Mobile) -->
+  <div class="hidden md:block bg-white border-b border-slate-200 shadow-subtle">
+    <div class="max-w-7xl mx-auto px-4 flex space-x-6 py-2.5 text-sm font-semibold">
+      <button onclick="switchTab('corrigir')" id="deskTabCorrigir" class="desk-tab text-brand-600 border-b-2 border-brand-600 pb-1 flex items-center space-x-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h0.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         <span>Corrigir Prova</span>
       </button>
-      <button id="tabBtnGabarito" onclick="switchTab('gabarito')" class="tab-btn px-4 py-2 rounded-lg font-medium text-sm transition flex items-center space-x-2 text-slate-400 hover:bg-slate-800 hover:text-slate-200">
-        <i class="fa-solid fa-file-signature"></i>
-        <span>Gabarito (Opcional)</span>
+      <button onclick="switchTab('pesos')" id="deskTabPesos" class="desk-tab text-slate-500 hover:text-slate-800 pb-1 flex items-center space-x-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+        <span>Pesos & Gabarito</span>
       </button>
-      <button id="tabBtnDiario" onclick="switchTab('diario')" class="tab-btn px-4 py-2 rounded-lg font-medium text-sm transition flex items-center space-x-2 text-slate-400 hover:bg-slate-800 hover:text-slate-200">
-        <i class="fa-solid fa-chart-column"></i>
+      <button onclick="switchTab('diario')" id="deskTabDiario" class="desk-tab text-slate-500 hover:text-slate-800 pb-1 flex items-center space-x-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
         <span>Diário de Notas</span>
       </button>
     </div>
-  </nav>
+  </div>
 
   <!-- MAIN CONTAINER -->
-  <main class="max-w-7xl mx-auto w-full px-4 py-6 flex-1">
+  <main class="max-w-7xl mx-auto w-full px-3 sm:px-6 py-4 sm:py-6 flex-1">
 
     <!-- ==================== ABA 1: CORRIGIR ==================== -->
-    <section id="tabCorrigir" class="space-y-6">
+    <section id="tabCorrigir" class="space-y-4">
       
-      <!-- BANNER DE STATUS AUTÔNOMO -->
-      <div id="autonomoBanner" class="bg-gradient-to-r from-emerald-950/60 to-slate-900 border border-emerald-500/30 rounded-xl p-3.5 flex items-center justify-between text-xs sm:text-sm text-emerald-300">
-        <div class="flex items-center space-x-3">
-          <i class="fa-solid fa-wand-magic-sparkles text-emerald-400 text-lg"></i>
-          <div>
-            <span class="font-semibold text-white">Leitura Autônoma Ativa:</span>
-            <span class="text-slate-300">A IA corrigirá e atribuirá nota sem exigir gabarito prévio.</span>
+      <!-- Student Info Header Card -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-card space-y-3">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+          
+          <!-- Student & Class Inputs -->
+          <div class="md:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Nome do Aluno</label>
+              <div class="relative">
+                <input type="text" id="inputStudentName" placeholder="Ex: Ana Souza (ou detectado na foto)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+              </div>
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Turma / Obs</label>
+              <input type="text" id="inputStudentClass" placeholder="Ex: 9º Ano A - Mat" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+            </div>
+          </div>
+
+          <!-- Total Score Summary Display -->
+          <div class="md:col-span-5 bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Nota Consolidada</span>
+              <div class="flex items-baseline space-x-2 mt-0.5">
+                <span id="sessionScoreEarned" class="text-2xl sm:text-3xl font-extrabold font-display text-brand-600">0.0</span>
+                <span id="sessionScoreMax" class="text-xs font-bold text-slate-400">/ 0.0 pts</span>
+              </div>
+            </div>
+
+            <div class="text-right">
+              <span id="sessionDeductionLabel" class="text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-lg inline-block">
+                Desconto: -0,0 pts
+              </span>
+              <div id="sessionWeightedContainer" class="hidden text-[11px] text-slate-500 font-medium mt-1">
+                Ponderada: <span id="sessionScoreWeighted" class="font-bold text-slate-800">0.0</span>
+              </div>
+            </div>
           </div>
         </div>
-        <button onclick="switchTab('gabarito')" class="text-xs bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 px-2.5 py-1 rounded-md border border-emerald-700/50 transition">
-          Definir Gabarito
-        </button>
+
+        <!-- Multi-page horizontal strip -->
+        <div class="pt-2 border-t border-slate-100">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-slate-600 flex items-center space-x-1.5">
+              <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+              <span>Páginas deste Aluno (<span id="pageCountBadge">0</span>)</span>
+            </span>
+            <span class="text-[11px] text-slate-400">Adicione quantas páginas precisar</span>
+          </div>
+
+          <!-- Thumbnails scroll -->
+          <div id="pageThumbnailsStrip" class="flex space-x-3 overflow-x-auto pb-1 pt-1 min-h-[72px] items-center">
+            <div class="text-xs text-slate-400 italic py-2">Nenhuma página capturada ainda.</div>
+          </div>
+        </div>
+
+        <!-- Primary Camera / File capture buttons -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2">
+          
+          <!-- Native Camera trigger -->
+          <label class="sm:col-span-2 cursor-pointer bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white font-bold py-3 px-4 rounded-xl shadow-md shadow-brand-500/20 transition flex items-center justify-center space-x-2 text-xs sm:text-sm">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h0.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <span>+ Fotografar Página (Câmera Native HDR)</span>
+            <input type="file" accept="image/*" capture="environment" class="hidden" onchange="handleNativeCameraCapture(event)">
+          </label>
+
+          <!-- Gallery Multi-upload -->
+          <label class="cursor-pointer bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-semibold py-3 px-3 rounded-xl border border-slate-200 transition flex items-center justify-center space-x-2 text-xs sm:text-sm">
+            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <span>Galeria (1 ou +)</span>
+            <input type="file" accept="image/*" multiple class="hidden" onchange="handleGalleryUpload(event)">
+          </label>
+        </div>
       </div>
 
-      <!-- MAIN SCANNER & PREVIEW WORKSPACE -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <!-- MAIN WORKSPACE: Active Page Overlay & Question List -->
+      <div id="activeWorkspace" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-5">
         
-        <!-- LEFT/TOP PANEL: CAMERA & CAPTURE -->
-        <div class="lg:col-span-7 flex flex-col space-y-4">
-          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col items-center relative overflow-hidden">
+        <!-- LEFT: Interactive Image Overlay Container -->
+        <div class="lg:col-span-7 space-y-3">
+          <div class="bg-white border border-slate-200 rounded-2xl p-3 shadow-card space-y-2">
             
-            <!-- CONTROLES DA CÂMERA -->
-            <div class="w-full flex items-center justify-between mb-3 text-xs text-slate-400">
-              <span id="cameraInfo" class="flex items-center space-x-1.5">
-                <i class="fa-solid fa-video text-slate-400"></i>
-                <span>Câmera Traseira (Ao Vivo)</span>
-              </span>
-              <div class="flex space-x-2">
-                <button id="btnSwitchCamera" onclick="toggleCameraFacing()" class="hover:text-white px-2 py-1 rounded bg-slate-800 border border-slate-700 transition" title="Alternar Câmera">
-                  <i class="fa-solid fa-rotate text-xs"></i> Alternar
-                </button>
-              </div>
+            <div class="flex items-center justify-between text-xs text-slate-500 px-1">
+              <span id="activePageTitleLabel" class="font-bold text-slate-800">Visualizando Página 1</span>
+              <span class="text-[11px] text-slate-400">Toque numa questão para editar</span>
             </div>
 
-            <!-- CONTAINER DA CÂMERA E IMAGEM -->
-            <div id="mediaContainer" class="relative w-full aspect-[3/4] max-h-[600px] bg-slate-950 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center">
+            <!-- Image Container with Exact Overlay -->
+            <div id="imageContainerWrapper" class="relative w-full bg-slate-900 rounded-xl overflow-hidden border border-slate-200 select-none">
+              <img id="activePageImage" class="w-full h-auto block object-contain mx-auto max-h-[70vh]" alt="Folha de Prova">
               
-              <!-- VIDEO LIVE -->
-              <video id="videoElement" autoplay playsinline class="w-full h-full object-cover"></video>
-              
-              <!-- GUIA DE MOLDURA DA PROVA -->
-              <div id="cameraGuide" class="absolute inset-4 border-2 border-dashed border-brand-500/50 rounded-lg pointer-events-none flex flex-col justify-between p-3">
-                <div class="flex justify-between text-[10px] text-brand-400 font-mono">
-                  <span>[ CANTO SUP ESQ ]</span>
-                  <span>[ CANTO SUP DIR ]</span>
-                </div>
-                <div class="scanner-line absolute left-0 w-full"></div>
-                <div class="flex justify-between text-[10px] text-brand-400 font-mono">
-                  <span>[ CANTO INF ESQ ]</span>
-                  <span>[ CANTO INF DIR ]</span>
-                </div>
-              </div>
+              <!-- Bounding Boxes Overlay Layer -->
+              <div id="boundingBoxOverlay" class="absolute inset-0 pointer-events-auto"></div>
 
-              <!-- CAPTURED IMAGE AND OVERLAY -->
-              <div id="resultImageWrapper" class="hidden absolute inset-0 w-full h-full bg-slate-950 flex items-center justify-center">
-                <img id="capturedImage" class="w-full h-full object-contain" alt="Prova Capturada" />
-                <div id="boundingBoxOverlay" class="absolute inset-0 pointer-events-auto"></div>
-              </div>
-
-              <!-- LOADING OVERLAY -->
-              <div id="loadingOverlay" class="hidden absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center z-20 space-y-4">
-                <div class="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-                <div class="text-center space-y-1">
-                  <p class="font-semibold text-white">Analisando Folha de Prova...</p>
-                  <p class="text-xs text-slate-400">Extraindo enunciados, respostas e calculando pontuação.</p>
+              <!-- Page Analyzing Overlay Indicator -->
+              <div id="pageAnalyzingOverlay" class="hidden absolute inset-0 bg-slate-900/70 backdrop-blur-sm flex flex-col items-center justify-center text-white space-y-3 z-10">
+                <div class="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+                <div class="text-center px-4">
+                  <p class="font-bold text-sm">Analisando Folha com Gemini IA...</p>
+                  <p class="text-xs text-slate-300 mt-0.5">Identificando enunciados, respostas e bounding boxes.</p>
                 </div>
               </div>
             </div>
 
-            <!-- BOTÕES DE AÇÃO PRINCIPAIS -->
-            <div class="w-full grid grid-cols-3 gap-2 mt-4">
-              <button id="btnFreeze" onclick="toggleFreeze()" class="py-3 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-medium text-xs sm:text-sm border border-slate-700 transition flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2">
-                <i class="fa-solid fa-pause text-brand-400"></i>
-                <span id="btnFreezeText">Congelar & Revisar</span>
-              </button>
-
-              <button id="btnCapture" onclick="captureAndGrade()" class="py-3 px-2 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white rounded-xl font-semibold text-xs sm:text-sm shadow-lg shadow-brand-500/25 transition flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2">
-                <i class="fa-solid fa-wand-magic-sparkles"></i>
-                <span>Capturar Agora</span>
-              </button>
-
-              <label class="py-3 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-medium text-xs sm:text-sm border border-slate-700 transition flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2 cursor-pointer text-center">
-                <i class="fa-solid fa-upload text-indigo-400"></i>
-                <span>Galeria</span>
-                <input type="file" id="fileInput" accept="image/*" class="hidden" onchange="handleFileUpload(event)">
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <!-- RIGHT/BOTTOM PANEL: RESUMO E QUESTÕES CORRIGIDAS -->
-        <div class="lg:col-span-5 flex flex-col space-y-4">
-          
-          <!-- RESUMO DA NOTA -->
-          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div>
-                <h2 class="text-base font-bold text-white">Resultado da Avaliação</h2>
-                <p class="text-xs text-slate-400" id="examStudentLabel">Aguardando leitura de prova...</p>
-              </div>
-              <div class="text-right">
-                <span id="scoreBadge" class="text-2xl font-extrabold text-brand-400">-- / --</span>
-                <p id="percentageBadge" class="text-xs text-slate-400 font-semibold">0%</p>
-              </div>
-            </div>
-
-            <!-- DADOS DO ALUNO E DISCIPLINA -->
-            <div class="grid grid-cols-2 gap-3 text-xs">
-              <div>
-                <label class="block text-slate-400 mb-1">Nome do Aluno</label>
-                <input type="text" id="inputStudentName" placeholder="Ex: João Silva" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-brand-500">
-              </div>
-              <div>
-                <label class="block text-slate-400 mb-1">Disciplina / Turma</label>
-                <input type="text" id="inputSubject" placeholder="Ex: Matemática 3ºA" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-brand-500">
-              </div>
-            </div>
-
-            <!-- LISTA RESUMIDA DE QUESTÕES -->
-            <div class="space-y-2">
-              <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Questões Detectadas</h3>
-              <div id="questionsList" class="space-y-2 max-h-60 overflow-y-auto pr-1">
-                <div class="text-center py-8 text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">
-                  Nenhuma prova analisada no momento.<br>Posicione a folha na câmera e toque em <b>Capturar Agora</b>.
-                </div>
-              </div>
-            </div>
-
-            <!-- BOTÃO DE SALVAR NO DIÁRIO -->
-            <button id="btnSaveToDiary" onclick="saveCurrentToDiary()" disabled class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-emerald-600/20 flex items-center justify-center space-x-2">
-              <i class="fa-solid fa-bookmark"></i>
-              <span>Salvar no Diário de Notas</span>
+            <!-- Add manual question button under image -->
+            <button onclick="addManualQuestion()" class="w-full py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-semibold border border-dashed border-slate-300 transition flex items-center justify-center space-x-1.5">
+              <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              <span>+ Adicionar Questão Manualmente</span>
             </button>
           </div>
         </div>
 
-      </div>
-    </section>
+        <!-- RIGHT: Question Breakdown & Action Buttons -->
+        <div class="lg:col-span-5 space-y-4">
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-card space-y-4">
+            
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 class="text-sm font-bold text-slate-800">Questões nesta Página</h3>
+              <span id="activePageQuestionsCount" class="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">0 detectadas</span>
+            </div>
 
-    <!-- ==================== ABA 2: GABARITO OPCIONAL ==================== -->
-    <section id="tabGabarito" class="hidden space-y-6 max-w-4xl mx-auto">
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
-        <div>
-          <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-            <i class="fa-solid fa-file-signature text-brand-400"></i>
-            <span>Gabarito e Critérios de Correção (Opcional)</span>
-          </h2>
-          <p class="text-xs text-slate-400 mt-1">
-            Se você preferir que a IA siga um gabarito específico ou critérios de pontuação personalizados, cadastre-os abaixo.
-          </p>
+            <!-- Questions List -->
+            <div id="activePageQuestionsList" class="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- Save Student & Clear for Next -->
+            <div class="pt-2 border-t border-slate-100 space-y-2">
+              <button onclick="saveStudentToDiary()" id="btnSaveStudent" class="w-full py-3.5 bg-correct-600 hover:bg-correct-700 active:bg-correct-800 text-white font-bold rounded-xl shadow-lg shadow-correct-500/20 text-sm transition flex items-center justify-center space-x-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <span>Salvar e Próximo Aluno</span>
+              </button>
+              <button onclick="clearCurrentSession()" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl text-xs transition">
+                Descartar Sessão Atual
+              </button>
+            </div>
+
+          </div>
         </div>
 
-        <div class="bg-amber-950/40 border border-amber-500/30 rounded-xl p-4 text-xs text-amber-300 flex items-start space-x-3">
-          <i class="fa-solid fa-circle-info text-amber-400 text-base mt-0.5"></i>
-          <div>
-            <p class="font-semibold">Aviso Importante:</p>
-            <p class="text-slate-300 mt-0.5">
-              Este passo é inteiramente **opcional**. Se você deixar o gabarito em branco, o modelo de Inteligência Artificial analisará autonomamente os enunciados, interpretará as respostas e atribuirá as notas com base na exatidão do conteúdo.
+      </div>
+
+      <!-- Empty State Banner when no pages added yet -->
+      <div id="emptyWorkspaceState" class="bg-white border border-slate-200 rounded-2xl p-8 shadow-card text-center space-y-4 max-w-xl mx-auto my-6">
+        <div class="w-16 h-16 rounded-2xl bg-brand-50 text-brand-600 mx-auto flex items-center justify-center">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 9a2 2 0 012-2h0.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-slate-800">Pronto para Corrigir!</h2>
+          <p class="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+            Toque em <b>"Fotografar Página"</b> acima usando a câmera do seu celular ou selecione fotos da galeria. O processamento em segundo plano permite fotografar múltiplas páginas sem esperar.
+          </p>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ==================== ABA 2: PESOS & GABARITO ==================== -->
+    <section id="tabPesos" class="hidden space-y-6 max-w-4xl mx-auto">
+      
+      <!-- Scoring Mode Cards -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-card space-y-4">
+        <div>
+          <h2 class="text-base font-bold text-slate-900 font-display">Modo de Pontuação & Pesos</h2>
+          <p class="text-xs text-slate-500">Escolha como a IA deve atribuir o valor de cada questão.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <!-- Option 1: Auto -->
+          <div onclick="setScoringMode('auto')" id="modeCardAuto" class="border-2 rounded-xl p-4 cursor-pointer transition border-brand-600 bg-brand-50/50">
+            <div class="flex items-center space-x-2">
+              <input type="radio" name="scoringModeRadio" id="radioAuto" checked class="text-brand-600">
+              <label for="radioAuto" class="font-bold text-xs text-slate-800 cursor-pointer">Leitura Automática da Folha</label>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-2">
+              A IA lê a pontuação impressa na própria prova (ex: "Questão 1 (2.0 pts)"). Se não houver, distribui igualmente.
+            </p>
+          </div>
+
+          <!-- Option 2: Table -->
+          <div onclick="setScoringMode('table')" id="modeCardTable" class="border-2 rounded-xl p-4 cursor-pointer transition border-slate-200 hover:border-slate-300">
+            <div class="flex items-center space-x-2">
+              <input type="radio" name="scoringModeRadio" id="radioTable" class="text-brand-600">
+              <label for="radioTable" class="font-bold text-xs text-slate-800 cursor-pointer">Tabela Fixa de Pesos</label>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-2">
+              Você define o peso exato de cada questão (Q1 = 1,0, Q2 = 2,5...). A IA utilizará esta regra rigorosamente.
             </p>
           </div>
         </div>
 
-        <!-- FORMULÁRIO DE GABARITO -->
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-slate-300 mb-2">Respostas e Critérios em Texto</label>
-            <textarea id="rubricText" rows="6" placeholder="Exemplo:&#10;Q1: Alternativa B (2.0 pts)&#10;Q2: O aluno deve mencionar fotossíntese e clorofila (3.0 pts)&#10;Q3: X = 42 (5.0 pts)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-brand-500 font-mono"></textarea>
+        <!-- Table Editor (Visible only when table mode is active) -->
+        <div id="weightsTableSection" class="hidden pt-3 border-t border-slate-100 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="text-xs font-bold text-slate-700">Tabela de Pesos por Questão</span>
+            
+            <!-- Quick Generator -->
+            <div class="flex items-center space-x-2 text-xs">
+              <span class="text-slate-500">Gerar rápido:</span>
+              <button onclick="generatePresetWeights(5, 2.0)" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-semibold">5x 2.0</button>
+              <button onclick="generatePresetWeights(10, 1.0)" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-semibold">10x 1.0</button>
+            </div>
           </div>
 
+          <div id="weightsListRows" class="space-y-2">
+            <!-- Rows rendered via JS -->
+          </div>
+
+          <div class="flex items-center justify-between pt-2">
+            <button onclick="addWeightRow()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-brand-700 text-xs font-bold rounded-lg transition">
+              + Adicionar Questão
+            </button>
+            <div class="text-xs font-bold text-slate-700">
+              Soma dos Pesos: <span id="weightsTotalSum" class="text-brand-600 font-extrabold text-sm">0.0</span> pts
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Normalization & Weighted Factor -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-card space-y-4">
+        <h2 class="text-base font-bold text-slate-900 font-display">Normalização & Média Ponderada</h2>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
           <div>
-            <label class="block text-sm font-medium text-slate-300 mb-2">Ou Anexar Foto do Gabarito / Espelho da Prova</label>
-            <div class="flex items-center space-x-4">
-              <label class="flex-1 border-2 border-dashed border-slate-800 hover:border-brand-500/50 bg-slate-950 rounded-xl p-4 text-center cursor-pointer transition">
-                <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-500 mb-2"></i>
-                <p class="text-xs text-slate-300 font-medium">Clique para selecionar foto ou PDF do Gabarito</p>
-                <input type="file" id="rubricFile" accept="image/*,application/pdf" class="hidden" onchange="handleRubricUpload(event)">
-              </label>
-              <div id="rubricPreviewContainer" class="hidden w-24 h-24 bg-slate-950 border border-slate-800 rounded-xl overflow-hidden relative">
-                <img id="rubricPreviewImg" class="w-full h-full object-cover" alt="Gabarito" />
-                <button onclick="removeRubricImage()" class="absolute top-1 right-1 bg-red-600/80 text-white rounded-full w-5 h-5 text-[10px] flex items-center justify-center">
-                  <i class="fa-solid fa-x"></i>
-                </button>
-              </div>
+            <label class="block font-semibold text-slate-700 mb-1">Nota Máxima da Prova (Referência)</label>
+            <input type="number" step="0.5" id="inputMaxExamScore" value="10.0" onchange="saveSettingsToStorage()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <p class="text-[11px] text-slate-400 mt-1">Geralmente 10.0. Utilizada como teto de referência no Diário.</p>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Fator de Peso na Média (Multiplicador)</label>
+            <input type="number" step="0.1" id="inputWeightFactor" value="1.0" onchange="saveSettingsToStorage()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <p class="text-[11px] text-slate-400 mt-1">Exemplo: 0.4 se a prova vale 40% da média do trimestre.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Optional Answer Key (Gabarito Opcional) -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-card space-y-4">
+        <div>
+          <h2 class="text-base font-bold text-slate-900 font-display">Gabarito e Espelho de Respostas (100% Opcional)</h2>
+          <p class="text-xs text-slate-500">Forneça um gabarito se desejar critérios específicos de correção.</p>
+        </div>
+
+        <!-- Banner Info -->
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 text-xs text-emerald-800 flex items-start space-x-2.5">
+          <svg class="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <div>
+            <span class="font-bold block">Leitura Autônoma Ativa:</span>
+            <span>Se deixar este gabarito em branco, a IA resolverá as questões sozinha e corrigirá com base na exatidão do conteúdo.</span>
+          </div>
+        </div>
+
+        <!-- Rubric Textarea -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Gabarito em Texto / Instruções de Pontuação</label>
+          <textarea id="rubricText" rows="4" placeholder="Exemplo:&#10;Q1: Alternativa B&#10;Q2: Deve citar a Lei de Ohm (V=R.I)&#10;Q3: Resultado final X = 42" onchange="saveSettingsToStorage()" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-800 font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
+        </div>
+
+        <!-- Answer Key Image / PDF File -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Anexar Foto ou PDF do Gabarito Oficial</label>
+          <div class="flex items-center space-x-3">
+            <label class="flex-1 border-2 border-dashed border-slate-200 hover:border-brand-500 bg-slate-50 rounded-xl p-3 text-center cursor-pointer transition">
+              <svg class="w-6 h-6 text-slate-400 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+              <span id="rubricFileLabel" class="text-xs font-medium text-slate-600 block">Selecionar foto do gabarito...</span>
+              <input type="file" id="rubricFile" accept="image/*,application/pdf" class="hidden" onchange="handleRubricFileUpload(event)">
+            </label>
+            <div id="rubricPreviewContainer" class="hidden relative w-16 h-16 rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
+              <img id="rubricPreviewImg" class="w-full h-full object-cover" alt="Gabarito">
+              <button onclick="removeRubricFile()" class="absolute top-0.5 right-0.5 bg-rose-600 text-white rounded-full p-0.5 text-[10px]">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
             </div>
           </div>
         </div>
 
-        <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
-          <button onclick="clearRubric()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg transition">
-            Limpar Gabarito
-          </button>
-          <button onclick="saveRubric()" class="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold rounded-lg transition shadow-md">
-            Salvar Gabarito Fixo
-          </button>
-        </div>
       </div>
+
     </section>
 
     <!-- ==================== ABA 3: DIÁRIO DE NOTAS ==================== -->
-    <section id="tabDiario" class="hidden space-y-6">
+    <section id="tabDiario" class="hidden space-y-5">
       
-      <!-- HEADER E CARDS ESTATÍSTICOS -->
-      <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
-          <span class="text-xs text-slate-400 font-medium">Total de Provas</span>
-          <span id="statTotalExams" class="text-2xl font-extrabold text-white mt-2">0</span>
+      <!-- Real-Time Statistics Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div class="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-card">
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Provas</span>
+          <span id="statTotalExams" class="text-2xl font-extrabold font-display text-slate-900 mt-1 block">0</span>
         </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
-          <span class="text-xs text-slate-400 font-medium">Média Geral</span>
-          <span id="statMean" class="text-2xl font-extrabold text-brand-400 mt-2">0.0</span>
+        <div class="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-card">
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Média Geral</span>
+          <span id="statMean" class="text-2xl font-extrabold font-display text-brand-600 mt-1 block">0.0</span>
         </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
-          <span class="text-xs text-slate-400 font-medium">Mediana</span>
-          <span id="statMedian" class="text-2xl font-extrabold text-emerald-400 mt-2">0.0</span>
+        <div class="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-card">
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Mediana</span>
+          <span id="statMedian" class="text-2xl font-extrabold font-display text-correct-600 mt-1 block">0.0</span>
         </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
-          <span class="text-xs text-slate-400 font-medium">Moda</span>
-          <span id="statMode" class="text-2xl font-extrabold text-amber-400 mt-2">N/A</span>
+        <div class="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-card">
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Moda</span>
+          <span id="statMode" class="text-2xl font-extrabold font-display text-partial-600 mt-1 block truncate">N/A</span>
         </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between col-span-2 md:col-span-1">
-          <span class="text-xs text-slate-400 font-medium">Desvio Padrão Pop.</span>
-          <span id="statStdDev" class="text-2xl font-extrabold text-indigo-400 mt-2">0.00</span>
+        <div class="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-card col-span-2 md:col-span-1">
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Desvio Padrão (σ)</span>
+          <span id="statStdDev" class="text-2xl font-extrabold font-display text-indigo-600 mt-1 block">0.00</span>
         </div>
       </div>
 
-      <!-- TABELA DE PROVAS CORRIGIDAS -->
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <!-- Gradebook Table & Export Actions -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-card space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
           <div>
-            <h2 class="text-lg font-bold text-white">Histórico de Correções</h2>
-            <p class="text-xs text-slate-400">Registros gravados no navegador local.</p>
+            <h2 class="text-base font-bold text-slate-900 font-display">Registro de Alunos Corrigidos</h2>
+            <p class="text-xs text-slate-500">Histórico salvo localmente no seu dispositivo.</p>
           </div>
-          <div class="flex space-x-2">
-            <button onclick="exportToCSV()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold transition flex items-center space-x-2 shadow-md">
-              <i class="fa-solid fa-file-excel"></i>
-              <span>Exportar Excel/CSV (UTF-8)</span>
+
+          <div class="flex items-center space-x-2">
+            <button onclick="exportGradebookCSV()" class="px-3.5 py-2 bg-correct-600 hover:bg-correct-700 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-md shadow-correct-500/20">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              <span>Exportar CSV (Excel)</span>
             </button>
-            <button onclick="clearAllDiary()" class="px-3 py-2 bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-800/50 rounded-xl text-xs font-medium transition">
-              <i class="fa-solid fa-trash"></i>
+            <button onclick="clearAllDiary()" class="px-2.5 py-2 bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 rounded-xl text-xs font-semibold border border-slate-200 transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             </button>
           </div>
         </div>
 
-        <div class="overflow-x-auto rounded-xl border border-slate-800">
-          <table class="w-full text-left text-xs text-slate-300">
-            <thead class="bg-slate-950 text-slate-400 uppercase tracking-wider">
+        <!-- Table -->
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200">
               <tr>
                 <th class="p-3">Data/Hora</th>
                 <th class="p-3">Aluno</th>
-                <th class="p-3">Disciplina</th>
-                <th class="p-3 text-center">Nota / Máx</th>
-                <th class="p-3 text-center">% Porcentagem</th>
+                <th class="p-3">Turma</th>
+                <th class="p-3 text-center">Páginas</th>
+                <th class="p-3 text-center">Nota Bruta</th>
+                <th id="thWeightedHeader" class="p-3 text-center hidden">Nota Ponderada</th>
                 <th class="p-3 text-right">Ações</th>
               </tr>
             </thead>
-            <tbody id="diaryTableBody" class="divide-y divide-slate-800">
-              <tr>
-                <td colspan="6" class="p-6 text-center text-slate-500">
-                  Nenhum registro no diário de notas até o momento.
-                </td>
-              </tr>
+            <tbody id="diaryTableBody" class="divide-y divide-slate-100 text-slate-700">
+              <!-- Rendered via JS -->
             </tbody>
           </table>
         </div>
       </div>
+
     </section>
 
   </main>
 
-  <!-- MODAL DE CONFIGURAÇÃO DA API GEMINI -->
-  <div id="configModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl relative">
-      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 class="text-base font-bold text-white flex items-center space-x-2">
-          <i class="fa-solid fa-sliders text-brand-400"></i>
-          <span>Configuração da API Google Gemini</span>
+  <!-- MOBILE BOTTOM TAB BAR -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-30 px-2 py-1.5 shadow-float">
+    <div class="grid grid-cols-3 text-center text-xs">
+      <button onclick="switchTab('corrigir')" id="mobTabCorrigir" class="mob-tab py-1 text-brand-600 font-bold flex flex-col items-center justify-center space-y-0.5">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h0.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span class="text-[10px]">Corrigir</span>
+      </button>
+      <button onclick="switchTab('pesos')" id="mobTabPesos" class="mob-tab py-1 text-slate-400 font-medium flex flex-col items-center justify-center space-y-0.5">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+        <span class="text-[10px]">Gabarito</span>
+      </button>
+      <button onclick="switchTab('diario')" id="mobTabDiario" class="mob-tab py-1 text-slate-400 font-medium flex flex-col items-center justify-center space-y-0.5">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        <span class="text-[10px]">Diário</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- MODAL: GEMINI API CONFIG & AUTOMATIC MODEL DETECTOR -->
+  <div id="configModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-float relative">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <h3 class="text-base font-bold font-display text-slate-900 flex items-center space-x-2">
+          <svg class="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <span>Configuração da API Gemini</span>
         </h3>
-        <button onclick="closeConfigModal()" class="text-slate-400 hover:text-white transition">
-          <i class="fa-solid fa-xmark text-lg"></i>
+        <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
 
-      <div class="space-y-4">
-        <!-- CHAVE DE API -->
+      <div class="space-y-3 text-xs">
+        <!-- API Key Input -->
         <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Chave da API (Gemini API Key)</label>
+          <label class="block font-bold text-slate-700 mb-1">Chave da API (Gemini API Key)</label>
           <div class="relative">
-            <input type="password" id="inputApiKey" placeholder="AIzaSy..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-500 pr-10 font-mono">
-            <button type="button" onclick="toggleApiKeyVisibility()" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200">
-              <i id="eyeIcon" class="fa-solid fa-eye text-xs"></i>
+            <input type="password" id="inputApiKey" placeholder="AIzaSy..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 pr-10">
+            <button type="button" onclick="toggleApiKeyVisibility()" class="absolute right-3 top-2 text-slate-400 hover:text-slate-600">
+              <svg id="eyeIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
             </button>
           </div>
-          <p class="text-[11px] text-slate-400 mt-1">
-            Obtenha gratuitamente no <a href="https://aistudio.google.com/" target="_blank" class="text-brand-400 underline">Google AI Studio</a>.
-          </p>
+          <p class="text-[11px] text-slate-400 mt-1">Obtenha gratuitamente no <a href="https://aistudio.google.com/" target="_blank" class="text-brand-600 underline font-semibold">Google AI Studio</a>.</p>
         </div>
 
-        <!-- SELEÇÃO DE MODELO GEMINI -->
+        <!-- Automatic Model Detector -->
         <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Modelo Gemini (Versão Ativa)</label>
-          <input type="text" id="inputModelName" value="gemini-3.0-flash" placeholder="Ex: gemini-3.0-flash" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-500 font-mono">
-          
-          <div class="mt-2 flex flex-wrap gap-1.5">
-            <span class="text-[10px] text-slate-400 self-center mr-1">Atalhos:</span>
-            <button type="button" onclick="setPresetModel('gemini-3.0-flash')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-brand-300 rounded text-[11px] border border-slate-700 transition">
-              gemini-3.0-flash
-            </button>
-            <button type="button" onclick="setPresetModel('gemini-3.5-flash')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded text-[11px] border border-slate-700 transition">
-              gemini-3.5-flash
-            </button>
-            <button type="button" onclick="setPresetModel('gemini-3-flash-preview')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[11px] border border-slate-700 transition">
-              gemini-3-flash-preview
+          <div class="flex items-center justify-between mb-1">
+            <label class="font-bold text-slate-700">Modelo Gemini Selecionado</label>
+            <button type="button" onclick="detectAvailableModels()" id="btnDetectModels" class="text-[11px] text-brand-600 font-bold hover:underline flex items-center space-x-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              <span>Detectar Modelos</span>
             </button>
           </div>
-          <p class="text-[11px] text-slate-400 mt-1">
-            Recomendado: <b>gemini-3.0-flash</b>. Permite atualização direta sem alterar o código-fonte.
-          </p>
+
+          <!-- Select populated by ListModels API -->
+          <select id="selectModelName" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <option value="gemini-3-flash-preview">gemini-3-flash-preview (Recomendado)</option>
+            <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+            <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+          </select>
+
+          <!-- Fallback manual input -->
+          <input type="text" id="inputModelFallback" placeholder="Ou digite o nome do modelo..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 mt-1.5">
         </div>
       </div>
 
-      <div class="pt-3 border-t border-slate-800 flex justify-end space-x-2">
-        <button onclick="closeConfigModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition">
+      <div class="pt-3 border-t border-slate-100 flex justify-end space-x-2">
+        <button onclick="closeConfigModal()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-semibold">
           Cancelar
         </button>
-        <button onclick="saveApiConfig()" class="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-xs font-semibold transition shadow-md">
+        <button onclick="saveApiConfig()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/20">
           Salvar Configurações
         </button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL PAINEL DE REVISÃO DO PROFESSOR (QUESTÃO INDIVIDUAL) -->
-  <div id="reviewModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative">
-      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 id="modalQuestionTitle" class="text-base font-bold text-white flex items-center space-x-2">
-          <i class="fa-solid fa-magnifying-glass text-brand-400"></i>
-          <span>Revisar Questão</span>
+  <!-- MODAL: REVISÃO DO PROFESSOR (QUESTÃO INDIVIDUAL) -->
+  <div id="reviewModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white border border-slate-200 rounded-t-2xl sm:rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-float relative max-h-[90vh] overflow-y-auto">
+      
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <h3 id="modalQuestionTitle" class="text-base font-bold font-display text-slate-900 flex items-center space-x-2">
+          <svg class="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          <span>Revisão da Questão</span>
         </h3>
-        <button onclick="closeReviewModal()" class="text-slate-400 hover:text-white transition">
-          <i class="fa-solid fa-xmark text-lg"></i>
+        <button onclick="closeReviewModal()" class="text-slate-400 hover:text-slate-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
 
-      <div class="space-y-3">
+      <div class="space-y-3 text-xs">
+        <!-- Transcribed answer -->
         <div>
-          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Transcrição Detectada</label>
-          <div id="modalTranscription" class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 font-mono max-h-32 overflow-y-auto"></div>
+          <label class="block font-bold text-slate-400 uppercase tracking-wider mb-1">Resposta Transcrita do Aluno</label>
+          <div id="modalTranscription" class="bg-slate-50 border border-slate-200 rounded-xl p-3 font-mono text-slate-800 max-h-28 overflow-y-auto"></div>
         </div>
 
+        <!-- AI Justification -->
         <div>
-          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Justificativa da IA</label>
-          <p id="modalJustification" class="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3 text-xs text-slate-300 leading-relaxed"></p>
+          <label class="block font-bold text-slate-400 uppercase tracking-wider mb-1">Justificativa da IA</label>
+          <p id="modalJustification" class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 leading-relaxed"></p>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 pt-2">
+        <!-- Quick Status Toggle Pills -->
+        <div>
+          <label class="block font-bold text-slate-700 mb-1.5">Avaliação / Status</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="setModalStatus('correto')" id="btnStatusCorrect" class="py-2 px-2 rounded-xl border-2 font-bold text-center text-xs transition">
+              ✓ Correto
+            </button>
+            <button onclick="setModalStatus('parcial')" id="btnStatusPartial" class="py-2 px-2 rounded-xl border-2 font-bold text-center text-xs transition">
+              ~ Parcial
+            </button>
+            <button onclick="setModalStatus('errado')" id="btnStatusWrong" class="py-2 px-2 rounded-xl border-2 font-bold text-center text-xs transition">
+              ✗ Errado
+            </button>
+          </div>
+        </div>
+
+        <!-- Scores Inputs -->
+        <div class="grid grid-cols-3 gap-2.5 pt-1">
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Avaliação / Status</label>
-            <select id="modalStatusSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500">
-              <option value="correct">Verde - Correto</option>
-              <option value="partial">Amarelo - Parcial / Meio Certo</option>
-              <option value="wrong">Vermelho - Errado</option>
-            </select>
+            <label class="block font-bold text-slate-700 mb-1">Nota Obtida</label>
+            <input type="number" step="0.25" min="0" id="modalPointsEarned" oninput="recalcModalDeduction()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500">
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Pontuação Atribuída</label>
-            <div class="flex items-center space-x-2">
-              <input type="number" step="0.25" min="0" id="modalPointsInput" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 font-semibold focus:outline-none focus:border-brand-500">
-              <span id="modalMaxPointsLabel" class="text-xs text-slate-400 font-bold whitespace-nowrap">/ 0 pts</span>
+            <label class="block font-bold text-slate-700 mb-1">Valor Máximo</label>
+            <input type="number" step="0.25" min="0" id="modalMaxPoints" oninput="recalcModalDeduction()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-400 mb-1">Descontado</label>
+            <div id="modalDeductionDisplay" class="bg-rose-50 border border-rose-200 rounded-xl px-3 py-2 font-bold text-rose-600 text-center">
+              -0.0
             </div>
           </div>
         </div>
       </div>
 
-      <div class="pt-3 border-t border-slate-800 flex justify-end space-x-2">
-        <button onclick="closeReviewModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition">
-          Cancelar
+      <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+        <button onclick="deleteActiveQuestion()" class="text-rose-600 hover:text-rose-700 text-xs font-bold flex items-center space-x-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          <span>Excluir Questão</span>
         </button>
-        <button onclick="saveQuestionReview()" class="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-xs font-semibold transition shadow-md">
-          Salvar Alterações
-        </button>
+
+        <div class="flex space-x-2">
+          <button onclick="closeReviewModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-semibold">
+            Cancelar
+          </button>
+          <button onclick="saveQuestionReview()" class="px-4 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/20">
+            Salvar
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- TOAST NOTIFICATION CONTAINER -->
-  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col space-y-2 pointer-events-none"></div>
-
-  <!-- FOOTER -->
-  <footer class="bg-slate-900 border-t border-slate-800 py-3 text-center text-xs text-slate-400">
-    Corretor Visual IA &copy; 2026 &bull; Desenvolvido para Professores & Educadores
-  </footer>
+  <!-- TOAST NOTIFICATIONS CONTAINER -->
+  <div id="toastContainer" class="fixed bottom-16 md:bottom-4 right-4 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
   <!-- MAIN JAVASCRIPT APP LOGIC -->
   <script>
-    // GLOBAL STATE
-    let state = {
+    // GLOBAL APP STATE
+    const state = {
       apiKey: localStorage.getItem('gemini_api_key') || '',
-      modelName: localStorage.getItem('gemini_model') || 'gemini-3.0-flash',
-      rubricText: localStorage.getItem('gemini_rubric_text') || '',
-      rubricImage: localStorage.getItem('gemini_rubric_image') || null,
-      currentStream: null,
-      facingMode: 'environment', // Rear camera primary
-      isFrozen: false,
-      currentExamData: null,
-      activeQuestionIndex: null,
-      diaryEntries: JSON.parse(localStorage.getItem('gemini_diary') || '[]')
-    };
+      modelName: localStorage.getItem('gemini_model') || 'gemini-3-flash-preview',
+      scoringMode: localStorage.getItem('scoring_mode') || 'auto', // 'auto' or 'table'
+      weightsTable: JSON.parse(localStorage.getItem('weights_table') || '[{"q":"Q1","weight":2.0},{"q":"Q2","weight":2.0},{"q":"Q3","weight":2.0},{"q":"Q4","weight":2.0},{"q":"Q5","weight":2.0}]'),
+      maxExamScore: parseFloat(localStorage.getItem('max_exam_score')) || 10.0,
+      weightFactor: parseFloat(localStorage.getItem('weight_factor')) || 1.0,
+      rubricText: localStorage.getItem('rubric_text') || '',
+      rubricFileBase64: localStorage.getItem('rubric_file_base64') || null,
+      rubricFileMime: localStorage.getItem('rubric_file_mime') || null,
+      
+      // Active Student Session
+      session: {
+        studentName: '',
+        studentClass: localStorage.getItem('last_student_class') || '',
+        pages: [], // Array of { id, title, dataUrl, status: 'analyzing'|'ready'|'error', questions: [], detectedStudentName }
+        activePageIndex: 0
+      },
+      
+      // Question Review Modal Target
+      reviewTarget: { pageIndex: null, questionIndex: null },
 
-    // DOM ELEMENTS
-    const videoElement = document.getElementById('videoElement');
-    const resultImageWrapper = document.getElementById('resultImageWrapper');
-    const capturedImage = document.getElementById('capturedImage');
-    const boundingBoxOverlay = document.getElementById('boundingBoxOverlay');
-    const cameraGuide = document.getElementById('cameraGuide');
-    const loadingOverlay = document.getElementById('loadingOverlay');
+      // Saved Gradebook
+      diary: JSON.parse(localStorage.getItem('gemini_gradebook') || '[]')
+    };
 
     // INITIALIZATION
     window.addEventListener('DOMContentLoaded', () => {
-      initSettings();
-      initCamera();
-      renderDiary();
+      initSettingsUI();
+      renderWeightsTableRows();
+      renderDiaryTable();
     });
 
     // SETTINGS & LOCAL STORAGE MANAGEMENT
-    function initSettings() {
+    function initSettingsUI() {
       document.getElementById('inputApiKey').value = state.apiKey;
-      document.getElementById('inputModelName').value = state.modelName;
+      document.getElementById('selectModelName').value = state.modelName;
+      document.getElementById('inputModelFallback').value = state.modelName;
       document.getElementById('rubricText').value = state.rubricText;
-      
-      if (state.rubricImage) {
-        document.getElementById('rubricPreviewImg').src = state.rubricImage;
+      document.getElementById('inputMaxExamScore').value = state.maxExamScore;
+      document.getElementById('inputWeightFactor').value = state.weightFactor;
+      document.getElementById('inputStudentClass').value = state.session.studentClass;
+
+      if (state.rubricFileBase64) {
         document.getElementById('rubricPreviewContainer').classList.remove('hidden');
+        document.getElementById('rubricPreviewImg').src = state.rubricFileBase64;
+        document.getElementById('rubricFileLabel').textContent = 'Gabarito Anexado';
       }
 
+      setScoringMode(state.scoringMode, false);
       updateApiStatusUI();
     }
 
     function updateApiStatusUI() {
       const dot = document.getElementById('apiStatusDot');
       const text = document.getElementById('apiStatusText');
-      
       if (state.apiKey && state.apiKey.trim().length > 10) {
-        dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50";
-        text.textContent = `API Conectada (${state.modelName})`;
+        dot.className = "w-2.5 h-2.5 rounded-full bg-correct-500 shadow-sm shadow-correct-500/50";
+        text.textContent = `API OK (${state.modelName.split('-')[0]})`;
       } else {
         dot.className = "w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse";
         text.textContent = "Inserir Chave API";
       }
+
+      // Update Header Mode Pill
+      const modeText = document.getElementById('headerModeText');
+      if (state.rubricText || state.rubricFileBase64) {
+        modeText.textContent = "Com Gabarito";
+      } else {
+        modeText.textContent = "Leitura Autônoma";
+      }
     }
 
-    document.getElementById('btnOpenConfig').addEventListener('click', () => {
+    function openConfigModal() {
       document.getElementById('configModal').classList.remove('hidden');
-    });
-
+    }
     function closeConfigModal() {
       document.getElementById('configModal').classList.add('hidden');
     }
 
     function saveApiConfig() {
       const key = document.getElementById('inputApiKey').value.trim();
-      const model = document.getElementById('inputModelName').value.trim() || 'gemini-3.0-flash';
+      let model = document.getElementById('selectModelName').value;
+      const fallback = document.getElementById('inputModelFallback').value.trim();
+      if (fallback) model = fallback;
 
       state.apiKey = key;
       state.modelName = model;
@@ -578,201 +765,350 @@
 
       updateApiStatusUI();
       closeConfigModal();
-      showToast('Configurações salvas com sucesso!', 'success');
-    }
-
-    function setPresetModel(name) {
-      document.getElementById('inputModelName').value = name;
+      showToast('Configurações salvas!', 'success');
     }
 
     function toggleApiKeyVisibility() {
       const input = document.getElementById('inputApiKey');
-      const icon = document.getElementById('eyeIcon');
-      if (input.type === 'password') {
-        input.type = 'text';
-        icon.className = 'fa-solid fa-eye-slash text-xs';
-      } else {
-        input.type = 'password';
-        icon.className = 'fa-solid fa-eye text-xs';
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    // AUTOMATIC MODEL DETECTOR (Gemini ListModels API)
+    async function detectAvailableModels() {
+      const key = document.getElementById('inputApiKey').value.trim() || state.apiKey;
+      if (!key) {
+        showToast('Insira sua chave de API para buscar os modelos.', 'warning');
+        return;
+      }
+
+      const btn = document.getElementById('btnDetectModels');
+      btn.innerHTML = `<span class="animate-spin inline-block mr-1">🌀</span> Buscando...`;
+
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const data = await response.json();
+        const models = data.models || [];
+        
+        // Filter generateContent models
+        const validModels = models.filter(m => 
+          m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent')
+        );
+
+        if (validModels.length === 0) throw new Error('Nenhum modelo compatível encontrado.');
+
+        const select = document.getElementById('selectModelName');
+        select.innerHTML = '';
+
+        // Sort Flash & Pro models first
+        validModels.sort((a, b) => {
+          const nameA = a.name.toLowerCase();
+          const nameB = b.name.toLowerCase();
+          if (nameA.includes('flash') && !nameB.includes('flash')) return -1;
+          if (!nameA.includes('flash') && nameB.includes('flash')) return 1;
+          return 0;
+        });
+
+        validModels.forEach(m => {
+          const modelId = m.name.replace('models/', '');
+          const opt = document.createElement('option');
+          opt.value = modelId;
+          opt.textContent = `${modelId} (${m.displayName || 'Gemini'})`;
+          select.appendChild(opt);
+        });
+
+        showToast(`${validModels.length} modelos detectados!`, 'success');
+      } catch (err) {
+        console.error('Erro ListModels:', err);
+        showToast('Erro ao listar modelos. Verifique sua Chave de API.', 'error');
+      } finally {
+        btn.innerHTML = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg><span>Detectar Modelos</span>`;
       }
     }
 
     // TAB NAVIGATION
     function switchTab(tab) {
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('bg-brand-600', 'text-white', 'shadow-md');
-        btn.classList.add('text-slate-400', 'hover:bg-slate-800', 'hover:text-slate-200');
+      // Desktop tabs
+      document.querySelectorAll('.desk-tab').forEach(btn => {
+        btn.classList.remove('text-brand-600', 'border-b-2', 'border-brand-600');
+        btn.classList.add('text-slate-500');
+      });
+      // Mobile tabs
+      document.querySelectorAll('.mob-tab').forEach(btn => {
+        btn.classList.remove('text-brand-600', 'font-bold');
+        btn.classList.add('text-slate-400', 'font-medium');
       });
 
       document.getElementById('tabCorrigir').classList.add('hidden');
-      document.getElementById('tabGabarito').classList.add('hidden');
+      document.getElementById('tabPesos').classList.add('hidden');
       document.getElementById('tabDiario').classList.add('hidden');
 
       if (tab === 'corrigir') {
-        document.getElementById('tabBtnCorrigir').classList.add('bg-brand-600', 'text-white', 'shadow-md');
+        document.getElementById('deskTabCorrigir').classList.add('text-brand-600', 'border-b-2', 'border-brand-600');
+        document.getElementById('mobTabCorrigir').classList.add('text-brand-600', 'font-bold');
         document.getElementById('tabCorrigir').classList.remove('hidden');
-        if (!state.currentStream && !state.isFrozen) initCamera();
-      } else if (tab === 'gabarito') {
-        document.getElementById('tabBtnGabarito').classList.add('bg-brand-600', 'text-white', 'shadow-md');
-        document.getElementById('tabGabarito').classList.remove('hidden');
+      } else if (tab === 'pesos') {
+        document.getElementById('deskTabPesos').classList.add('text-brand-600', 'border-b-2', 'border-brand-600');
+        document.getElementById('mobTabPesos').classList.add('text-brand-600', 'font-bold');
+        document.getElementById('tabPesos').classList.remove('hidden');
       } else if (tab === 'diario') {
-        document.getElementById('tabBtnDiario').classList.add('bg-brand-600', 'text-white', 'shadow-md');
+        document.getElementById('deskTabDiario').classList.add('text-brand-600', 'border-b-2', 'border-brand-600');
+        document.getElementById('mobTabDiario').classList.add('text-brand-600', 'font-bold');
         document.getElementById('tabDiario').classList.remove('hidden');
-        renderDiary();
+        renderDiaryTable();
       }
     }
 
-    // CAMERA LOGIC
-    async function initCamera() {
-      if (state.currentStream) {
-        state.currentStream.getTracks().forEach(track => track.stop());
-      }
+    // SCORING MODES & WEIGHTS TABLE
+    function setScoringMode(mode, save = true) {
+      state.scoringMode = mode;
+      if (save) localStorage.setItem('scoring_mode', mode);
 
-      try {
-        const constraints = {
-          video: {
-            facingMode: state.facingMode,
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
-          }
-        };
+      const cardAuto = document.getElementById('modeCardAuto');
+      const cardTable = document.getElementById('modeCardTable');
+      const radioAuto = document.getElementById('radioAuto');
+      const radioTable = document.getElementById('radioTable');
+      const sectionTable = document.getElementById('weightsTableSection');
 
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        state.currentStream = stream;
-        videoElement.srcObject = stream;
-        videoElement.play();
-
-        document.getElementById('cameraInfo').innerHTML = `
-          <i class="fa-solid fa-video text-emerald-400"></i>
-          <span>Câmera (${state.facingMode === 'environment' ? 'Traseira' : 'Frontal'}) Ao Vivo</span>
-        `;
-      } catch (err) {
-        console.warn('Erro ao acessar câmera primária, tentando fallback:', err);
-        try {
-          const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
-          state.currentStream = fallbackStream;
-          videoElement.srcObject = fallbackStream;
-          videoElement.play();
-        } catch (e) {
-          showToast('Não foi possível acessar a câmera. Use o upload da galeria.', 'warning');
-        }
-      }
-    }
-
-    function toggleCameraFacing() {
-      state.facingMode = state.facingMode === 'environment' ? 'user' : 'environment';
-      initCamera();
-    }
-
-    function toggleFreeze() {
-      const btnText = document.getElementById('btnFreezeText');
-      if (!state.isFrozen) {
-        // Congelar
-        if (!videoElement.paused) videoElement.pause();
-        state.isFrozen = true;
-        btnText.textContent = 'Descongelar';
-        showToast('Imagem congelada para revisão', 'info');
+      if (mode === 'auto') {
+        cardAuto.className = "border-2 rounded-xl p-4 cursor-pointer transition border-brand-600 bg-brand-50/50";
+        cardTable.className = "border-2 rounded-xl p-4 cursor-pointer transition border-slate-200 hover:border-slate-300";
+        radioAuto.checked = true;
+        sectionTable.classList.add('hidden');
       } else {
-        // Descongelar
-        videoElement.play();
-        state.isFrozen = false;
-        resultImageWrapper.classList.add('hidden');
-        cameraGuide.classList.remove('hidden');
-        btnText.textContent = 'Congelar & Revisar';
+        cardTable.className = "border-2 rounded-xl p-4 cursor-pointer transition border-brand-600 bg-brand-50/50";
+        cardAuto.className = "border-2 rounded-xl p-4 cursor-pointer transition border-slate-200 hover:border-slate-300";
+        radioTable.checked = true;
+        sectionTable.classList.remove('hidden');
       }
     }
 
-    // UPLOAD IMAGE HANDLER
-    function handleFileUpload(event) {
+    function renderWeightsTableRows() {
+      const container = document.getElementById('weightsListRows');
+      container.innerHTML = '';
+      let sum = 0;
+
+      state.weightsTable.forEach((item, idx) => {
+        sum += parseFloat(item.weight || 0);
+        const row = document.createElement('div');
+        row.className = "flex items-center space-x-2 text-xs";
+        row.innerHTML = `
+          <input type="text" value="${item.q}" onchange="updateWeightRow(${idx}, 'q', this.value)" class="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 font-bold text-slate-800">
+          <span class="text-slate-400 font-semibold">Peso:</span>
+          <input type="number" step="0.5" min="0" value="${item.weight}" onchange="updateWeightRow(${idx}, 'weight', this.value)" class="w-24 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 font-bold text-slate-900">
+          <span class="text-slate-400">pts</span>
+          <button onclick="removeWeightRow(${idx})" class="text-slate-400 hover:text-rose-600 p-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        `;
+        container.appendChild(row);
+      });
+
+      document.getElementById('weightsTotalSum').textContent = sum.toFixed(1);
+    }
+
+    function updateWeightRow(idx, field, val) {
+      if (field === 'weight') state.weightsTable[idx].weight = parseFloat(val) || 0;
+      else state.weightsTable[idx].q = val;
+      localStorage.setItem('weights_table', JSON.stringify(state.weightsTable));
+      renderWeightsTableRows();
+    }
+
+    function addWeightRow() {
+      const count = state.weightsTable.length + 1;
+      state.weightsTable.push({ q: `Q${count}`, weight: 2.0 });
+      localStorage.setItem('weights_table', JSON.stringify(state.weightsTable));
+      renderWeightsTableRows();
+    }
+
+    function removeWeightRow(idx) {
+      state.weightsTable.splice(idx, 1);
+      localStorage.setItem('weights_table', JSON.stringify(state.weightsTable));
+      renderWeightsTableRows();
+    }
+
+    function generatePresetWeights(n, defaultWeight) {
+      state.weightsTable = [];
+      for (let i = 1; i <= n; i++) {
+        state.weightsTable.push({ q: `Q${i}`, weight: defaultWeight });
+      }
+      localStorage.setItem('weights_table', JSON.stringify(state.weightsTable));
+      renderWeightsTableRows();
+    }
+
+    function saveSettingsToStorage() {
+      state.maxExamScore = parseFloat(document.getElementById('inputMaxExamScore').value) || 10.0;
+      state.weightFactor = parseFloat(document.getElementById('inputWeightFactor').value) || 1.0;
+      state.rubricText = document.getElementById('rubricText').value.trim();
+
+      localStorage.setItem('max_exam_score', state.maxExamScore);
+      localStorage.setItem('weight_factor', state.weightFactor);
+      localStorage.setItem('rubric_text', state.rubricText);
+      updateApiStatusUI();
+    }
+
+    function handleRubricFileUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
 
       const reader = new FileReader();
       reader.onload = function(e) {
-        capturedImage.src = e.target.result;
-        resultImageWrapper.classList.remove('hidden');
-        cameraGuide.classList.add('hidden');
-        state.isFrozen = true;
-        document.getElementById('btnFreezeText').textContent = 'Descongelar';
-        
-        // Iniciar correção automática
-        analyzeExamImage(e.target.result);
+        state.rubricFileBase64 = e.target.result;
+        state.rubricFileMime = file.type;
+        localStorage.setItem('rubric_file_base64', e.target.result);
+        localStorage.setItem('rubric_file_mime', file.type);
+        document.getElementById('rubricPreviewContainer').classList.remove('hidden');
+        document.getElementById('rubricPreviewImg').src = e.target.result;
+        document.getElementById('rubricFileLabel').textContent = file.name;
+        updateApiStatusUI();
+        showToast('Gabarito anexado com sucesso!', 'success');
       };
       reader.readAsDataURL(file);
     }
 
-    // CAPTURE & PROCESS VIA GEMINI API
-    async function captureAndGrade() {
+    function removeRubricFile() {
+      state.rubricFileBase64 = null;
+      state.rubricFileMime = null;
+      localStorage.removeItem('rubric_file_base64');
+      localStorage.removeItem('rubric_file_mime');
+      document.getElementById('rubricPreviewContainer').classList.add('hidden');
+      document.getElementById('rubricFileLabel').textContent = 'Selecionar foto do gabarito...';
+      updateApiStatusUI();
+    }
+
+    // CLIENT-SIDE IMAGE COMPRESSION (Canvas max 1600px @ 0.82 JPEG quality)
+    function compressImage(file, maxDimension = 1600, quality = 0.82) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxDimension || height > maxDimension) {
+              if (width > height) {
+                height = Math.round((height * maxDimension) / width);
+                width = maxDimension;
+              } else {
+                width = Math.round((width * maxDimension) / height);
+                height = maxDimension;
+              }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+            resolve({
+              dataUrl: compressedDataUrl,
+              width: width,
+              height: height,
+              mimeType: 'image/jpeg'
+            });
+          };
+          img.onerror = reject;
+          img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // MULTI-PAGE CAPTURE & ASYNCHRONOUS QUEUEING
+    async function handleNativeCameraCapture(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      await processAndEnqueueFiles([file]);
+      event.target.value = '';
+    }
+
+    async function handleGalleryUpload(event) {
+      const files = Array.from(event.target.files);
+      if (!files.length) return;
+      await processAndEnqueueFiles(files);
+      event.target.value = '';
+    }
+
+    async function processAndEnqueueFiles(files) {
       if (!state.apiKey) {
-        document.getElementById('configModal').classList.remove('hidden');
-        showToast('Por favor, configure sua chave de API do Gemini para continuar.', 'warning');
+        openConfigModal();
+        showToast('Por favor, configure sua chave de API Gemini primeiro.', 'warning');
         return;
       }
 
-      // Snapshot do video em canvas
-      const canvas = document.createElement('canvas');
-      canvas.width = videoElement.videoWidth || 1280;
-      canvas.height = videoElement.videoHeight || 720;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      for (const file of files) {
+        try {
+          const compressed = await compressImage(file);
+          const pageObj = {
+            id: 'page_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            title: `Pág. ${state.session.pages.length + 1}`,
+            dataUrl: compressed.dataUrl,
+            mimeType: compressed.mimeType,
+            status: 'analyzing', // 'analyzing', 'ready', 'error'
+            questions: [],
+            detectedStudentName: null
+          };
 
-      capturedImage.src = dataUrl;
-      resultImageWrapper.classList.remove('hidden');
-      cameraGuide.classList.add('hidden');
-      state.isFrozen = true;
-      document.getElementById('btnFreezeText').textContent = 'Descongelar';
+          state.session.pages.push(pageObj);
+          const pageIndex = state.session.pages.length - 1;
 
-      await analyzeExamImage(dataUrl);
+          // Set active page if first
+          if (state.session.pages.length === 1) {
+            state.session.activePageIndex = 0;
+          }
+
+          renderSessionUI();
+
+          // Launch Async AI Correction in background (Non-blocking!)
+          analyzePageAsync(pageIndex);
+        } catch (err) {
+          console.error('Erro ao comprimir imagem:', err);
+          showToast('Erro ao carregar a imagem.', 'error');
+        }
+      }
     }
 
-    async function analyzeExamImage(base64DataUrl) {
-      loadingOverlay.classList.remove('hidden');
+    // GEMINI REST API CORRECTION LOGIC
+    async function analyzePageAsync(pageIndex) {
+      const page = state.session.pages[pageIndex];
+      if (!page) return;
 
-      const mimeType = base64DataUrl.substring(
-        base64DataUrl.indexOf(":") + 1,
-        base64DataUrl.indexOf(";")
-      );
-      const base64Data = base64DataUrl.split(",")[1];
+      const base64Data = page.dataUrl.split(',')[1];
 
-      // Prompt para estruturação JSON
-      let promptText = `Você é um professor avaliador e especialista em correção de provas acadêmicas.
-Analise a imagem da prova fornecida. 
+      // Build Prompt Instructions
+      let promptText = `Você é um professor avaliador e perito em correção visual de provas acadêmicas.
+Analise detalhadamente a foto desta página de prova.
 
-INSTRUÇÕES DE CORREÇÃO:
-1. Identifique todas as questões visíveis na folha de prova (sejam objetivas/múltipla escolha ou discursivas).
-2. Para cada questão, transcreva a resposta dada pelo aluno, atribua o status ('correct' para 100% correto, 'partial' para parcialmente correto, 'wrong' para incorreto), informe a nota obtida (pointsEarned), nota máxima da questão (maxPoints) e uma breve justificativa explicativa.
-3. Forneça o retângulo delimitador exato (box2d) em coordenadas normalizadas [ymin, xmin, ymax, xmax] no intervalo de 0 a 1000 para cada questão na imagem.
-4. Tente identificar o nome do aluno e o nome da disciplina se visíveis na folha (caso contrário, use 'Aluno Desconhecido' e 'Avaliação Generalizada').`;
+REGRAS DE CORREÇÃO:
+1. Identifique todas as questões presentes nesta página.
+2. Para cada questão, transcreva a resposta dada pelo aluno, avalie o status ('correto', 'parcial', 'errado'), determine 'valor_maximo', 'nota_obtida', 'valor_retirado' (valor_maximo - nota_obtida) e uma justificativa concisa em português.
+3. Forneça as coordenadas exatas do retângulo delimitador box_2d: [ymin, xmin, ymax, xmax] normalizadas na escala 0 a 1000 para cada questão na imagem.
+4. Identifique o Nome do Aluno se impresso ou escrito no cabeçalho desta página.`;
 
-      if (state.rubricText || state.rubricImage) {
-        promptText += `\n\nUTILIZE ESTE GABARITO DE REFERÊNCIA FORNECIDO PELO PROFESSOR:\nTexto do Gabarito: ${state.rubricText || 'Ver imagem de gabarito em anexo se presente.'}`;
+      if (state.scoringMode === 'table') {
+        promptText += `\n\nUTILIZE ESTE PESO FIXO POR QUESTÃO:\n${JSON.stringify(state.weightsTable)}`;
+      }
+
+      if (state.rubricText || state.rubricFileBase64) {
+        promptText += `\n\nGABARITO DE REFERÊNCIA DO PROFESSOR:\nTexto: ${state.rubricText || 'Ver anexo'}`;
       } else {
-        promptText += `\n\nLEITURA AUTÔNOMA: Não há gabarito prévio. Analise a exatidão das questões diretamente pelo conteúdo dos enunciados e respostas.`;
+        promptText += `\n\nLEITURA AUTÔNOMA: Não há gabarito prévio. Analise a exatidão das questões diretamente pelo conteúdo.`;
       }
 
       const contentsParts = [
         { text: promptText },
-        {
-          inlineData: {
-            mimeType: mimeType,
-            data: base64Data
-          }
-        }
+        { inlineData: { mimeType: page.mimeType, data: base64Data } }
       ];
 
-      // Se houver imagem de gabarito cadastrada
-      if (state.rubricImage) {
-        const rubricMime = state.rubricImage.substring(
-          state.rubricImage.indexOf(":") + 1,
-          state.rubricImage.indexOf(";")
-        );
-        const rubricBase64 = state.rubricImage.split(",")[1];
+      if (state.rubricFileBase64) {
+        const rubricBase64 = state.rubricFileBase64.split(',')[1];
         contentsParts.push({
-          inlineData: {
-            mimeType: rubricMime,
-            data: rubricBase64
-          }
+          inlineData: { mimeType: state.rubricFileMime || 'image/jpeg', data: rubricBase64 }
         });
       }
 
@@ -780,13 +1116,11 @@ INSTRUÇÕES DE CORREÇÃO:
         contents: [{ parts: contentsParts }],
         generationConfig: {
           responseMimeType: "application/json",
+          temperature: 0.1,
           responseSchema: {
             type: "OBJECT",
             properties: {
-              studentName: { type: "STRING" },
-              subject: { type: "STRING" },
-              totalPointsEarned: { type: "NUMBER" },
-              totalPossiblePoints: { type: "NUMBER" },
+              detectedStudentName: { type: "STRING" },
               questions: {
                 type: "ARRAY",
                 items: {
@@ -794,28 +1128,27 @@ INSTRUÇÕES DE CORREÇÃO:
                   properties: {
                     questionNumber: { type: "STRING" },
                     transcription: { type: "STRING" },
-                    status: { type: "STRING", enum: ["correct", "partial", "wrong"] },
-                    pointsEarned: { type: "NUMBER" },
-                    maxPoints: { type: "NUMBER" },
-                    justification: { type: "STRING" },
-                    box2d: {
+                    status: { type: "STRING", enum: ["correto", "parcial", "errado"] },
+                    valor_maximo: { type: "NUMBER" },
+                    nota_obtida: { type: "NUMBER" },
+                    valor_retirado: { type: "NUMBER" },
+                    justificativa: { type: "STRING" },
+                    box_2d: {
                       type: "ARRAY",
                       items: { type: "NUMBER" },
-                      description: "[ymin, xmin, ymax, xmax] normalizado de 0 a 1000"
+                      description: "[ymin, xmin, ymax, xmax] 0-1000"
                     }
                   },
-                  required: ["questionNumber", "transcription", "status", "pointsEarned", "maxPoints", "justification", "box2d"]
+                  required: ["questionNumber", "transcription", "status", "valor_maximo", "nota_obtida", "valor_retirado", "justificativa", "box_2d"]
                 }
               }
             },
-            required: ["totalPointsEarned", "totalPossiblePoints", "questions"]
+            required: ["questions"]
           }
         }
       };
 
-      // Modelo configurável (Padrão: gemini-3.0-flash)
-      const activeModel = state.modelName || 'gemini-3.0-flash';
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${state.apiKey}`;
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${state.modelName}:generateContent?key=${state.apiKey}`;
 
       try {
         const response = await fetch(apiUrl, {
@@ -825,317 +1158,461 @@ INSTRUÇÕES DE CORREÇÃO:
         });
 
         if (!response.ok) {
-          const errJson = await response.json().catch(() => ({}));
-          throw new Error(errJson.error?.message || `Erro HTTP ${response.status}`);
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error?.message || `Erro HTTP ${response.status}`);
         }
 
-        const result = await response.json();
-        const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+        const resData = await response.json();
+        let rawText = resData.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        if (!rawText) throw new Error("Sem resposta válida da IA.");
 
-        if (!jsonText) throw new Error("A IA não retornou um formato JSON válido.");
+        // Robust JSON parse (strip markdown if needed)
+        rawText = rawText.trim();
+        if (rawText.startsWith('```json')) rawText = rawText.replace(/^```json/, '').replace(/```$/, '');
+        else if (rawText.startsWith('```')) rawText = rawText.replace(/^```/, '').replace(/```$/, '');
 
-        const parsedData = JSON.parse(jsonText);
-        state.currentExamData = parsedData;
+        const parsed = JSON.parse(rawText.trim());
 
-        renderExamResults(parsedData);
-        showToast('Correção concluída com sucesso!', 'success');
+        page.status = 'ready';
+        page.questions = parsed.questions || [];
+        page.detectedStudentName = parsed.detectedStudentName || null;
+
+        // Auto fill student name if detected on page 1
+        if (parsed.detectedStudentName && !document.getElementById('inputStudentName').value.trim()) {
+          document.getElementById('inputStudentName').value = parsed.detectedStudentName;
+          state.session.studentName = parsed.detectedStudentName;
+        }
+
+        showToast(`${page.title} corrigida! (${page.questions.length} q.)`, 'success');
       } catch (err) {
-        console.error("Erro na API do Gemini:", err);
-        showToast(`Erro na correção: ${err.message}`, 'error');
+        console.error('Erro na análise da página:', err);
+        page.status = 'error';
+        showToast(`Erro na ${page.title}: ${err.message}`, 'error');
       } finally {
-        loadingOverlay.classList.add('hidden');
+        renderSessionUI();
       }
     }
 
-    // RENDER RESULTS & BOUNDING BOXES
-    function renderExamResults(data) {
-      // Atualizar dados de formulário
-      document.getElementById('inputStudentName').value = data.studentName || 'Aluno Desconhecido';
-      document.getElementById('inputSubject').value = data.subject || 'Geral';
-      document.getElementById('examStudentLabel').textContent = `${data.studentName || 'Aluno'} - ${data.subject || 'Prova'}`;
+    // RENDER SESSION & ACTIVE PAGE WORKSPACE
+    function renderSessionUI() {
+      const pageCount = state.session.pages.length;
+      document.getElementById('pageCountBadge').textContent = pageCount;
 
-      // Recalcular totais dinamicamente
-      recalculateTotalScore();
+      const strip = document.getElementById('pageThumbnailsStrip');
+      strip.innerHTML = '';
 
-      // Renderizar caixas interativas sobre a imagem
-      renderBoundingBoxes(data.questions);
+      if (pageCount === 0) {
+        document.getElementById('emptyWorkspaceState').classList.remove('hidden');
+        document.getElementById('activeWorkspace').classList.add('hidden');
+        strip.innerHTML = `<div class="text-xs text-slate-400 italic py-2">Nenhuma página capturada ainda.</div>`;
+        updateSessionTotals();
+        return;
+      }
 
-      // Renderizar lista na coluna lateral
-      renderQuestionsList(data.questions);
+      document.getElementById('emptyWorkspaceState').classList.add('hidden');
+      document.getElementById('activeWorkspace').classList.remove('hidden');
 
-      // Habilitar botão de salvar
-      document.getElementById('btnSaveToDiary').disabled = false;
-    }
+      // Render thumbnails
+      state.session.pages.forEach((p, idx) => {
+        const isActive = idx === state.session.activePageIndex;
+        const thumb = document.createElement('div');
+        thumb.className = `relative flex-shrink-0 w-16 h-20 rounded-xl overflow-hidden border-2 cursor-pointer transition ${isActive ? 'border-brand-600 ring-2 ring-brand-500/30' : 'border-slate-200 opacity-80 hover:opacity-100'}`;
+        thumb.onclick = () => {
+          state.session.activePageIndex = idx;
+          renderSessionUI();
+        };
 
-    function recalculateTotalScore() {
-      if (!state.currentExamData || !state.currentExamData.questions) return;
-      
-      let earned = 0;
-      let max = 0;
+        let badgeHtml = '';
+        if (p.status === 'analyzing') {
+          badgeHtml = `<div class="absolute inset-0 bg-slate-900/60 backdrop-blur-[1px] flex items-center justify-center"><div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div></div>`;
+        } else if (p.status === 'error') {
+          badgeHtml = `<div class="absolute top-1 right-1 bg-rose-600 text-white rounded-full p-0.5"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div>`;
+        } else {
+          badgeHtml = `<div class="absolute top-1 right-1 bg-correct-600 text-white rounded-full p-0.5"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div>`;
+        }
 
-      state.currentExamData.questions.forEach(q => {
-        earned += parseFloat(q.pointsEarned || 0);
-        max += parseFloat(q.maxPoints || 0);
+        thumb.innerHTML = `
+          <img src="${p.dataUrl}" class="w-full h-full object-cover" alt="${p.title}">
+          ${badgeHtml}
+          <div class="absolute bottom-0 inset-x-0 bg-slate-900/80 text-white text-[9px] font-bold text-center py-0.5">${p.title}</div>
+          <button onclick="event.stopPropagation(); removeSessionPage(${idx})" class="absolute top-0.5 left-0.5 bg-slate-900/70 hover:bg-rose-600 text-white rounded-full p-0.5">
+            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        `;
+        strip.appendChild(thumb);
       });
 
-      earned = Math.round(earned * 100) / 100;
-      max = Math.round(max * 100) / 100;
+      // Render Active Page
+      const activePage = state.session.pages[state.session.activePageIndex];
+      if (activePage) {
+        document.getElementById('activePageTitleLabel').textContent = `Visualizando ${activePage.title}`;
+        document.getElementById('activePageImage').src = activePage.dataUrl;
 
-      state.currentExamData.totalPointsEarned = earned;
-      state.currentExamData.totalPossiblePoints = max;
+        const overlayLoader = document.getElementById('pageAnalyzingOverlay');
+        if (activePage.status === 'analyzing') {
+          overlayLoader.classList.remove('hidden');
+        } else {
+          overlayLoader.classList.add('hidden');
+        }
 
-      const pct = max > 0 ? Math.round((earned / max) * 100) : 0;
+        renderBoundingBoxes(activePage.questions);
+        renderQuestionsList(activePage.questions);
+      }
 
-      document.getElementById('scoreBadge').textContent = `${earned} / ${max}`;
-      document.getElementById('percentageBadge').textContent = `${pct}% de Aproveitamento`;
+      updateSessionTotals();
     }
 
+    function removeSessionPage(idx) {
+      state.session.pages.splice(idx, 1);
+      if (state.session.activePageIndex >= state.session.pages.length) {
+        state.session.activePageIndex = Math.max(0, state.session.pages.length - 1);
+      }
+      renderSessionUI();
+    }
+
+    // BOUNDING BOX OVERLAY & LABELS
     function renderBoundingBoxes(questions) {
-      boundingBoxOverlay.innerHTML = '';
-      
-      questions.forEach((q, idx) => {
-        if (!q.box2d || q.box2d.length < 4) return;
-        
-        const [ymin, xmin, ymax, xmax] = q.box2d;
+      const overlay = document.getElementById('boundingBoxOverlay');
+      overlay.innerHTML = '';
+
+      questions.forEach((q, qIdx) => {
+        if (!q.box_2d || q.box_2d.length < 4) return;
+        const [ymin, xmin, ymax, xmax] = q.box_2d;
 
         const top = ymin / 10;
         const left = xmin / 10;
         const height = (ymax - ymin) / 10;
         const width = (xmax - xmin) / 10;
 
-        let statusClass = "box-correct";
-        if (q.status === "partial") statusClass = "box-partial";
-        if (q.status === "wrong") statusClass = "box-wrong";
+        let boxClass = "box-correct";
+        let badgeIcon = "✓";
+        let badgeColor = "bg-correct-600 text-white";
+        let labelText = `${q.questionNumber} ${badgeIcon} (+${q.nota_obtida.toFixed(1).replace('.', ',')})`;
+
+        if (q.status === 'parcial') {
+          boxClass = "box-partial";
+          badgeIcon = "~";
+          badgeColor = "bg-partial-600 text-white";
+          labelText = `${q.questionNumber} ${badgeIcon} (+${q.nota_obtida.toFixed(1).replace('.', ',')} | -${q.valor_retirado.toFixed(1).replace('.', ',')})`;
+        } else if (q.status === 'errado') {
+          boxClass = "box-wrong";
+          badgeIcon = "✗";
+          badgeColor = "bg-wrong-600 text-white";
+          labelText = `${q.questionNumber} ${badgeIcon} (-${q.valor_retirado.toFixed(1).replace('.', ',')})`;
+        }
 
         const boxEl = document.createElement('div');
-        boxEl.className = `absolute border-2 rounded-md transition hover:scale-[1.02] cursor-pointer flex items-start p-1 ${statusClass}`;
+        boxEl.className = `absolute border-2 rounded-lg transition-transform hover:scale-[1.01] cursor-pointer ${boxClass}`;
         boxEl.style.top = `${top}%`;
         boxEl.style.left = `${left}%`;
         boxEl.style.height = `${height}%`;
         boxEl.style.width = `${width}%`;
 
         boxEl.innerHTML = `
-          <span class="bg-slate-900/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow border border-slate-700">
-            ${q.questionNumber || 'Q' + (idx + 1)} (${q.pointsEarned} pts)
-          </span>
+          <div class="absolute -top-3 left-1 ${badgeColor} text-[10px] font-extrabold px-1.5 py-0.5 rounded-md shadow-sm pointer-events-none whitespace-nowrap">
+            ${labelText}
+          </div>
         `;
 
         boxEl.onclick = (e) => {
           e.stopPropagation();
-          openReviewModal(idx);
+          openReviewModal(state.session.activePageIndex, qIdx);
         };
 
-        boundingBoxOverlay.appendChild(boxEl);
+        overlay.appendChild(boxEl);
       });
     }
 
     function renderQuestionsList(questions) {
-      const container = document.getElementById('questionsList');
+      const container = document.getElementById('activePageQuestionsList');
+      const countLabel = document.getElementById('activePageQuestionsCount');
       container.innerHTML = '';
+      countLabel.textContent = `${questions.length} detectadas`;
 
-      questions.forEach((q, idx) => {
-        let badgeColor = "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
-        let statusLabel = "Correto";
-        if (q.status === "partial") {
-          badgeColor = "bg-amber-500/20 text-amber-300 border-amber-500/30";
-          statusLabel = "Parcial";
-        } else if (q.status === "wrong") {
-          badgeColor = "bg-red-500/20 text-red-300 border-red-500/30";
-          statusLabel = "Incorreto";
-        }
+      if (questions.length === 0) {
+        container.innerHTML = `<div class="text-xs text-slate-400 italic text-center py-4">Nenhuma questão detectada nesta página.</div>`;
+        return;
+      }
+
+      questions.forEach((q, qIdx) => {
+        let badgeBg = "bg-correct-50 text-correct-700 border-correct-200";
+        if (q.status === 'parcial') badgeBg = "bg-partial-50 text-partial-700 border-partial-200";
+        if (q.status === 'errado') badgeBg = "bg-wrong-50 text-wrong-700 border-wrong-200";
 
         const item = document.createElement('div');
-        item.className = "bg-slate-950 border border-slate-800 rounded-xl p-3 hover:border-slate-700 transition cursor-pointer flex items-center justify-between";
-        item.onclick = () => openReviewModal(idx);
+        item.className = "bg-slate-50 border border-slate-200 rounded-xl p-3 hover:border-brand-500 transition cursor-pointer flex items-center justify-between";
+        item.onclick = () => openReviewModal(state.session.activePageIndex, qIdx);
 
         item.innerHTML = `
           <div class="flex items-center space-x-3">
-            <span class="w-7 h-7 rounded-lg bg-slate-800 text-slate-200 text-xs font-bold flex items-center justify-center border border-slate-700">
-              ${q.questionNumber || (idx + 1)}
+            <span class="w-8 h-8 rounded-lg bg-white text-slate-900 font-extrabold text-xs flex items-center justify-center border border-slate-200 shadow-subtle">
+              ${q.questionNumber || 'Q' + (qIdx + 1)}
             </span>
             <div>
-              <p class="text-xs font-medium text-slate-200 line-clamp-1">${q.transcription || 'Sem transcrição'}</p>
-              <p class="text-[11px] text-slate-400 truncate max-w-[180px]">${q.justification}</p>
+              <p class="text-xs font-semibold text-slate-800 line-clamp-1">${q.transcription || 'Sem transcrição'}</p>
+              <p class="text-[11px] text-slate-400 truncate max-w-[180px]">${q.justificativa}</p>
             </div>
           </div>
-          <div class="text-right flex flex-col items-end">
-            <span class="text-xs font-bold text-white">${q.pointsEarned} / ${q.maxPoints}</span>
-            <span class="text-[10px] px-1.5 py-0.5 rounded border mt-0.5 ${badgeColor}">${statusLabel}</span>
+
+          <div class="text-right">
+            <div class="text-xs font-bold text-slate-900">${q.nota_obtida.toFixed(1).replace('.', ',')} / ${q.valor_maximo.toFixed(1).replace('.', ',')}</div>
+            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md border mt-0.5 inline-block ${badgeBg}">
+              ${q.status.toUpperCase()}
+            </span>
           </div>
         `;
         container.appendChild(item);
       });
     }
 
-    // TEACHER REVIEW MODAL FOR INDIVIDUAL QUESTION ADJUSTMENT
-    function openReviewModal(idx) {
-      if (!state.currentExamData || !state.currentExamData.questions[idx]) return;
-      
-      state.activeQuestionIndex = idx;
-      const q = state.currentExamData.questions[idx];
+    function addManualQuestion() {
+      const activePage = state.session.pages[state.session.activePageIndex];
+      if (!activePage) return;
+
+      const qNum = `Q${activePage.questions.length + 1}`;
+      const newQ = {
+        questionNumber: qNum,
+        transcription: 'Questão Adicionada Manualmente',
+        status: 'correto',
+        valor_maximo: 2.0,
+        nota_obtida: 2.0,
+        valor_retirado: 0.0,
+        justificativa: 'Adicionada pelo professor',
+        box_2d: [100, 100, 300, 900]
+      };
+
+      activePage.questions.push(newQ);
+      renderSessionUI();
+      openReviewModal(state.session.activePageIndex, activePage.questions.length - 1);
+    }
+
+    // TEACHER QUESTION REVIEW MODAL
+    function openReviewModal(pageIdx, qIdx) {
+      state.reviewTarget = { pageIndex: pageIdx, questionIndex: qIdx };
+      const q = state.session.pages[pageIdx].questions[qIdx];
 
       document.getElementById('modalQuestionTitle').innerHTML = `
-        <i class="fa-solid fa-magnifying-glass text-brand-400"></i>
-        <span>Revisar ${q.questionNumber || 'Questão ' + (idx + 1)}</span>
+        <svg class="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        <span>Revisão da ${q.questionNumber}</span>
       `;
-      document.getElementById('modalTranscription').textContent = q.transcription || 'Nenhuma transcrição disponível.';
-      document.getElementById('modalJustification').textContent = q.justification || 'Sem justificativa gerada.';
-      document.getElementById('modalStatusSelect').value = q.status;
-      document.getElementById('modalPointsInput').value = q.pointsEarned;
-      document.getElementById('modalMaxPointsLabel').textContent = `/ ${q.maxPoints} pts`;
+      document.getElementById('modalTranscription').textContent = q.transcription || 'Sem transcrição';
+      document.getElementById('modalJustification').textContent = q.justificativa || 'Sem justificativa';
+      document.getElementById('modalPointsEarned').value = q.nota_obtida;
+      document.getElementById('modalMaxPoints').value = q.valor_maximo;
+
+      setModalStatus(q.status, false);
+      recalcModalDeduction();
 
       document.getElementById('reviewModal').classList.remove('hidden');
     }
 
     function closeReviewModal() {
       document.getElementById('reviewModal').classList.add('hidden');
-      state.activeQuestionIndex = null;
+      state.reviewTarget = { pageIndex: null, questionIndex: null };
+    }
+
+    function setModalStatus(status, autoAdjustScore = true) {
+      const btnC = document.getElementById('btnStatusCorrect');
+      const btnP = document.getElementById('btnStatusPartial');
+      const btnW = document.getElementById('btnStatusWrong');
+
+      btnC.className = "py-2 px-2 rounded-xl border-2 font-bold text-center text-xs transition border-slate-200 text-slate-600";
+      btnP.className = "py-2 px-2 rounded-xl border-2 font-bold text-center text-xs transition border-slate-200 text-slate-600";
+      btnW.className = "py-2 px-2 rounded-xl border-2 font-bold text-center text-xs transition border-slate-200 text-slate-600";
+
+      const max = parseFloat(document.getElementById('modalMaxPoints').value) || 0;
+
+      if (status === 'correto') {
+        btnC.className = "py-2 px-2 rounded-xl border-2 font-bold text-center text-xs transition border-correct-500 bg-correct-50 text-correct-700";
+        if (autoAdjustScore) document.getElementById('modalPointsEarned').value = max;
+      } else if (status === 'parcial') {
+        btnP.className = "py-2 px-2 rounded-xl border-2 font-bold text-center text-xs transition border-partial-500 bg-partial-50 text-partial-700";
+        if (autoAdjustScore) document.getElementById('modalPointsEarned').value = (max / 2).toFixed(2);
+      } else {
+        btnW.className = "py-2 px-2 rounded-xl border-2 font-bold text-center text-xs transition border-wrong-500 bg-wrong-50 text-wrong-700";
+        if (autoAdjustScore) document.getElementById('modalPointsEarned').value = 0;
+      }
+
+      document.getElementById('reviewModal').dataset.activeStatus = status;
+      recalcModalDeduction();
+    }
+
+    function recalcModalDeduction() {
+      const earned = parseFloat(document.getElementById('modalPointsEarned').value) || 0;
+      const max = parseFloat(document.getElementById('modalMaxPoints').value) || 0;
+      const deduction = Math.max(0, max - earned);
+
+      document.getElementById('modalDeductionDisplay').textContent = `-${deduction.toFixed(1).replace('.', ',')}`;
     }
 
     function saveQuestionReview() {
-      if (state.activeQuestionIndex === null || !state.currentExamData) return;
-      
-      const q = state.currentExamData.questions[state.activeQuestionIndex];
-      const newStatus = document.getElementById('modalStatusSelect').value;
-      const newPoints = parseFloat(document.getElementById('modalPointsInput').value) || 0;
+      const { pageIndex, questionIndex } = state.reviewTarget;
+      if (pageIndex === null || questionIndex === null) return;
+
+      const q = state.session.pages[pageIndex].questions[questionIndex];
+      const newStatus = document.getElementById('reviewModal').dataset.activeStatus || 'correto';
+      const newEarned = parseFloat(document.getElementById('modalPointsEarned').value) || 0;
+      const newMax = parseFloat(document.getElementById('modalMaxPoints').value) || 0;
 
       q.status = newStatus;
-      q.pointsEarned = newPoints;
-
-      // Re-renderizar visualizações
-      recalculateTotalScore();
-      renderBoundingBoxes(state.currentExamData.questions);
-      renderQuestionsList(state.currentExamData.questions);
+      q.nota_obtida = newEarned;
+      q.valor_maximo = newMax;
+      q.valor_retirado = Math.max(0, newMax - newEarned);
 
       closeReviewModal();
-      showToast('Pontuação atualizada com sucesso!', 'success');
+      renderSessionUI();
+      showToast('Questão atualizada!', 'success');
     }
 
-    // GABARITO OPCIONAL MANAGEMENT
-    function saveRubric() {
-      const text = document.getElementById('rubricText').value.trim();
-      state.rubricText = text;
-      localStorage.setItem('gemini_rubric_text', text);
-      showToast('Gabarito salvo e ativo para próximas correções!', 'success');
+    function deleteActiveQuestion() {
+      const { pageIndex, questionIndex } = state.reviewTarget;
+      if (pageIndex === null || questionIndex === null) return;
+
+      state.session.pages[pageIndex].questions.splice(questionIndex, 1);
+      closeReviewModal();
+      renderSessionUI();
+      showToast('Questão removida.', 'info');
     }
 
-    function clearRubric() {
-      state.rubricText = '';
-      state.rubricImage = null;
-      document.getElementById('rubricText').value = '';
-      document.getElementById('rubricPreviewContainer').classList.add('hidden');
-      localStorage.removeItem('gemini_rubric_text');
-      localStorage.removeItem('gemini_rubric_image');
-      showToast('Gabarito limpo. Modo leitura autônoma reativado.', 'info');
+    // CALCULATE CONSOLIDATED SESSION TOTALS
+    function updateSessionTotals() {
+      let earnedSum = 0;
+      let maxSum = 0;
+
+      state.session.pages.forEach(p => {
+        p.questions.forEach(q => {
+          earnedSum += parseFloat(q.nota_obtida || 0);
+          maxSum += parseFloat(q.valor_maximo || 0);
+        });
+      });
+
+      const deductionSum = Math.max(0, maxSum - earnedSum);
+      const weightedSum = earnedSum * state.weightFactor;
+
+      document.getElementById('sessionScoreEarned').textContent = earnedSum.toFixed(1).replace('.', ',');
+      document.getElementById('sessionScoreMax').textContent = `/ ${maxSum.toFixed(1).replace('.', ',')} pts`;
+      document.getElementById('sessionDeductionLabel').textContent = `Desconto: -${deductionSum.toFixed(1).replace('.', ',')} pts`;
+
+      const weightedContainer = document.getElementById('sessionWeightedContainer');
+      if (state.weightFactor !== 1.0) {
+        weightedContainer.classList.remove('hidden');
+        document.getElementById('sessionScoreWeighted').textContent = weightedSum.toFixed(1).replace('.', ',');
+      } else {
+        weightedContainer.classList.add('hidden');
+      }
     }
 
-    function handleRubricUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
+    // GRADEBOOK & DIÁRIO DE NOTAS
+    function saveStudentToDiary() {
+      if (state.session.pages.length === 0) {
+        showToast('Nenhuma página corrigida para salvar.', 'warning');
+        return;
+      }
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        state.rubricImage = e.target.result;
-        localStorage.setItem('gemini_rubric_image', e.target.result);
-        document.getElementById('rubricPreviewImg').src = e.target.result;
-        document.getElementById('rubricPreviewContainer').classList.remove('hidden');
-        showToast('Imagem de gabarito carregada com sucesso!', 'success');
-      };
-      reader.readAsDataURL(file);
-    }
+      const nameInput = document.getElementById('inputStudentName').value.trim() || 'Aluno Desconhecido';
+      const classInput = document.getElementById('inputStudentClass').value.trim() || 'Geral';
 
-    function removeRubricImage() {
-      state.rubricImage = null;
-      localStorage.removeItem('gemini_rubric_image');
-      document.getElementById('rubricPreviewContainer').classList.add('hidden');
-    }
+      localStorage.setItem('last_student_class', classInput);
+      state.session.studentClass = classInput;
 
-    // DIÁRIO DE NOTAS & STATS
-    function saveCurrentToDiary() {
-      if (!state.currentExamData) return;
-
-      const studentName = document.getElementById('inputStudentName').value.trim() || 'Aluno Desconhecido';
-      const subject = document.getElementById('inputSubject').value.trim() || 'Geral';
+      let earnedSum = 0;
+      let maxSum = 0;
+      state.session.pages.forEach(p => {
+        p.questions.forEach(q => {
+          earnedSum += parseFloat(q.nota_obtida || 0);
+          maxSum += parseFloat(q.valor_maximo || 0);
+        });
+      });
 
       const entry = {
         id: Date.now(),
         date: new Date().toLocaleString('pt-BR'),
-        studentName: studentName,
-        subject: subject,
-        earned: state.currentExamData.totalPointsEarned,
-        max: state.currentExamData.totalPossiblePoints,
-        pct: state.currentExamData.totalPossiblePoints > 0 
-          ? Math.round((state.currentExamData.totalPointsEarned / state.currentExamData.totalPossiblePoints) * 100) 
-          : 0,
-        questionsCount: state.currentExamData.questions.length
+        studentName: nameInput,
+        studentClass: classInput,
+        pagesCount: state.session.pages.length,
+        notaBruta: earnedSum,
+        notaMaxima: maxSum,
+        notaPonderada: earnedSum * state.weightFactor,
+        weightFactorUsed: state.weightFactor
       };
 
-      state.diaryEntries.unshift(entry);
-      localStorage.setItem('gemini_diary', JSON.stringify(state.diaryEntries));
-      
-      showToast(`Prova de ${studentName} gravada no Diário!`, 'success');
+      state.diary.unshift(entry);
+      localStorage.setItem('gemini_gradebook', JSON.stringify(state.diary));
+
+      showToast(`Prova de ${nameInput} gravada no Diário!`, 'success');
+
+      // Clear current session for next student
+      clearCurrentSession();
       switchTab('diario');
     }
 
-    function renderDiary() {
+    function clearCurrentSession() {
+      state.session.pages = [];
+      state.session.activePageIndex = 0;
+      document.getElementById('inputStudentName').value = '';
+      renderSessionUI();
+    }
+
+    function renderDiaryTable() {
       const tbody = document.getElementById('diaryTableBody');
+      const thWeighted = document.getElementById('thWeightedHeader');
       tbody.innerHTML = '';
 
-      if (state.diaryEntries.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="6" class="p-6 text-center text-slate-500">
-              Nenhum registro no diário de notas até o momento.
-            </td>
-          </tr>
-        `;
-        updateStats([]);
+      if (state.weightFactor !== 1.0) thWeighted.classList.remove('hidden');
+      else thWeighted.classList.add('hidden');
+
+      if (state.diary.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 italic">Nenhum registro no Diário de Notas.</td></tr>`;
+        updateStatistics([]);
         return;
       }
 
-      state.diaryEntries.forEach((item) => {
+      state.diary.forEach((item, idx) => {
         const tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-800/50 transition";
+        tr.className = "hover:bg-slate-50 transition";
+        
+        const weightedCol = state.weightFactor !== 1.0 
+          ? `<td class="p-3 text-center font-bold text-indigo-600">${item.notaPonderada.toFixed(1).replace('.', ',')}</td>` 
+          : '';
+
         tr.innerHTML = `
-          <td class="p-3 font-mono text-slate-400 text-[11px]">${item.date}</td>
-          <td class="p-3 font-semibold text-white">${item.studentName}</td>
-          <td class="p-3 text-slate-300">${item.subject}</td>
-          <td class="p-3 text-center font-bold text-brand-400">${item.earned} / ${item.max}</td>
-          <td class="p-3 text-center">
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${item.pct >= 60 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300'}">
-              ${item.pct}%
-            </span>
-          </td>
+          <td class="p-3 font-mono text-[11px] text-slate-400">${item.date}</td>
+          <td class="p-3 font-bold text-slate-900">${item.studentName}</td>
+          <td class="p-3 text-slate-600">${item.studentClass}</td>
+          <td class="p-3 text-center font-semibold text-slate-500">${item.pagesCount}</td>
+          <td class="p-3 text-center font-extrabold text-brand-600">${item.notaBruta.toFixed(1).replace('.', ',')} / ${item.notaMaxima.toFixed(1).replace('.', ',')}</td>
+          ${weightedCol}
           <td class="p-3 text-right">
-            <button onclick="deleteDiaryEntry(${item.id})" class="text-slate-500 hover:text-red-400 transition px-2 py-1">
-              <i class="fa-solid fa-trash text-xs"></i>
+            <button onclick="deleteDiaryEntry(${idx})" class="text-slate-400 hover:text-rose-600 p-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             </button>
           </td>
         `;
         tbody.appendChild(tr);
       });
 
-      updateStats(state.diaryEntries);
+      updateStatistics(state.diary);
     }
 
-    function deleteDiaryEntry(id) {
-      state.diaryEntries = state.diaryEntries.filter(e => e.id !== id);
-      localStorage.setItem('gemini_diary', JSON.stringify(state.diaryEntries));
-      renderDiary();
-      showToast('Registro excluído com sucesso.', 'info');
+    function deleteDiaryEntry(idx) {
+      state.diary.splice(idx, 1);
+      localStorage.setItem('gemini_gradebook', JSON.stringify(state.diary));
+      renderDiaryTable();
+      showToast('Registro excluído.', 'info');
     }
 
     function clearAllDiary() {
-      if (confirm('Tem certeza de que deseja apagar todo o histórico de notas?')) {
-        state.diaryEntries = [];
-        localStorage.setItem('gemini_diary', JSON.stringify([]));
-        renderDiary();
-        showToast('Diário de notas limpo.', 'info');
+      if (confirm('Tem certeza de que deseja apagar todo o Diário de Notas?')) {
+        state.diary = [];
+        localStorage.setItem('gemini_gradebook', JSON.stringify([]));
+        renderDiaryTable();
+        showToast('Diário limpo.', 'info');
       }
     }
 
-    // ESTATÍSTICAS MATEMÁTICAS (Média, Mediana, Moda e Desvio Padrão Populacional)
-    function updateStats(entries) {
+    // REAL-TIME STATISTICS CALCULATION (Mean, Median, Mode, Population StdDev)
+    function updateStatistics(entries) {
       if (entries.length === 0) {
         document.getElementById('statTotalExams').textContent = '0';
         document.getElementById('statMean').textContent = '0.0';
@@ -1145,109 +1622,103 @@ INSTRUÇÕES DE CORREÇÃO:
         return;
       }
 
-      const scores = entries.map(e => Number(e.earned));
+      const scores = entries.map(e => state.weightFactor !== 1.0 ? e.notaPonderada : e.notaBruta);
       const N = scores.length;
 
       // 1. Total
       document.getElementById('statTotalExams').textContent = N;
 
-      // 2. Média (Mean)
+      // 2. Mean
       const sum = scores.reduce((a, b) => a + b, 0);
       const mean = sum / N;
-      document.getElementById('statMean').textContent = mean.toFixed(1);
+      document.getElementById('statMean').textContent = mean.toFixed(1).replace('.', ',');
 
-      // 3. Mediana (Median)
+      // 3. Median
       const sorted = [...scores].sort((a, b) => a - b);
       let median = 0;
-      if (N % 2 === 0) {
-        median = (sorted[N / 2 - 1] + sorted[N / 2]) / 2;
-      } else {
-        median = sorted[Math.floor(N / 2)];
-      }
-      document.getElementById('statMedian').textContent = median.toFixed(1);
+      if (N % 2 === 0) median = (sorted[N / 2 - 1] + sorted[N / 2]) / 2;
+      else median = sorted[Math.floor(N / 2)];
+      document.getElementById('statMedian').textContent = median.toFixed(1).replace('.', ',');
 
-      // 4. Moda (Mode)
+      // 4. Mode (Unimodal, Multimodal or Amodal)
       const freq = {};
       let maxFreq = 0;
-      let mode = 'N/A';
       scores.forEach(s => {
-        freq[s] = (freq[s] || 0) + 1;
-        if (freq[s] > maxFreq) {
-          maxFreq = freq[s];
-        }
+        const key = s.toFixed(1);
+        freq[key] = (freq[key] || 0) + 1;
+        if (freq[key] > maxFreq) maxFreq = freq[key];
       });
+
+      let modeStr = 'Amodal';
       if (maxFreq > 1) {
         const modes = Object.keys(freq).filter(k => freq[k] === maxFreq);
-        mode = modes.slice(0, 2).join(', ');
+        modeStr = modes.map(m => m.replace('.', ',')).join('; ');
       }
-      document.getElementById('statMode').textContent = mode;
+      document.getElementById('statMode').textContent = modeStr;
 
-      // 5. Desvio Padrão Populacional (Population Standard Deviation σ)
+      // 5. Population Standard Deviation (σ)
       const variance = scores.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / N;
       const stdDev = Math.sqrt(variance);
-      document.getElementById('statStdDev').textContent = stdDev.toFixed(2);
+      document.getElementById('statStdDev').textContent = stdDev.toFixed(2).replace('.', ',');
     }
 
-    // EXPORTAR EXCEL / CSV (UTF-8 COM BOM)
-    function exportToCSV() {
-      if (state.diaryEntries.length === 0) {
-        showToast('Nenhum dado disponível para exportação.', 'warning');
+    // EXPORT GRADEBOOK CSV (UTF-8 BOM + Semicolon + Brazilian Commas)
+    function exportGradebookCSV() {
+      if (state.diary.length === 0) {
+        showToast('Nenhum dado disponível para exportar.', 'warning');
         return;
       }
 
-      // Cabeçalho CSV
-      let csvContent = "\uFEFF"; // UTF-8 BOM para Excel identificar acentos em pt-BR
-      csvContent += "ID;Data/Hora;Aluno;Disciplina;Nota Obtida;Nota Maxima;Porcentagem\n";
+      let csv = "\uFEFF"; // UTF-8 BOM
+      csv += "Data/Hora;Aluno;Turma;Qtd Paginas;Nota Bruta;Nota Maxima;Nota Ponderada\n";
 
-      state.diaryEntries.forEach(item => {
-        const line = [
-          item.id,
+      state.diary.forEach(item => {
+        const row = [
           `"${item.date}"`,
           `"${item.studentName.replace(/"/g, '""')}"`,
-          `"${item.subject.replace(/"/g, '""')}"`,
-          item.earned,
-          item.max,
-          `"${item.pct}%"`
+          `"${item.studentClass.replace(/"/g, '""')}"`,
+          item.pagesCount,
+          item.notaBruta.toFixed(1).replace('.', ','),
+          item.notaMaxima.toFixed(1).replace('.', ','),
+          item.notaPonderada.toFixed(1).replace('.', ',')
         ].join(";");
-        csvContent += line + "\n";
+        csv += row + "\n";
       });
 
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `diario_de_notas_${new Date().toISOString().slice(0,10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Append Statistics Summary at Bottom
+      const scores = state.diary.map(e => state.weightFactor !== 1.0 ? e.notaPonderada : e.notaBruta);
+      const N = scores.length;
+      const sum = scores.reduce((a, b) => a + b, 0);
+      const mean = sum / N;
 
-      showToast('Relatório CSV exportado com sucesso!', 'success');
+      csv += "\nRESUMO ESTATISTICO\n";
+      csv += `Total de Alunos;${N}\n`;
+      csv += `Media Geral;${mean.toFixed(2).replace('.', ',')}\n`;
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `diario_de_notas_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      showToast('Relatório CSV baixado!', 'success');
     }
 
-    // TOAST NOTIFICATIONS
+    // TOAST NOTIFICATION HELPERS
     function showToast(message, type = 'info') {
       const container = document.getElementById('toastContainer');
       const toast = document.createElement('div');
-      
-      let bg = "bg-slate-900 border-slate-700 text-slate-100";
-      let icon = "fa-circle-info text-brand-400";
 
-      if (type === 'success') {
-        bg = "bg-slate-900 border-emerald-500/40 text-emerald-200";
-        icon = "fa-circle-check text-emerald-400";
-      } else if (type === 'error') {
-        bg = "bg-slate-900 border-red-500/40 text-red-200";
-        icon = "fa-circle-xmark text-red-400";
-      } else if (type === 'warning') {
-        bg = "bg-slate-900 border-amber-500/40 text-amber-200";
-        icon = "fa-triangle-exclamation text-amber-400";
-      }
+      let bg = "bg-slate-900 text-white";
+      if (type === 'success') bg = "bg-correct-600 text-white shadow-correct-500/20";
+      if (type === 'error') bg = "bg-rose-600 text-white shadow-rose-500/20";
+      if (type === 'warning') bg = "bg-amber-500 text-white shadow-amber-500/20";
 
-      toast.className = `pointer-events-auto px-4 py-3 rounded-xl border shadow-xl text-xs font-medium flex items-center space-x-3 transition transform duration-300 translate-y-2 opacity-0 ${bg}`;
-      toast.innerHTML = `
-        <i class="fa-solid ${icon} text-base"></i>
-        <span>${message}</span>
-      `;
+      toast.className = `pointer-events-auto px-4 py-3 rounded-xl shadow-lg text-xs font-semibold flex items-center space-x-2 transition-all duration-300 transform translate-y-2 opacity-0 ${bg}`;
+      toast.innerHTML = `<span>${message}</span>`;
 
       container.appendChild(toast);
 
@@ -1258,7 +1729,7 @@ INSTRUÇÕES DE CORREÇÃO:
       setTimeout(() => {
         toast.classList.add('opacity-0', 'translate-y-2');
         setTimeout(() => toast.remove(), 300);
-      }, 4000);
+      }, 3500);
     }
   </script>
 </body>
