@@ -1,1201 +1,1542 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="h-full bg-slate-900 text-slate-100">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Corretor Visual IA - Correção Inteligente de Provas</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            500: '#0284c7',
-                            600: '#0284c7',
-                            700: '#0369a1',
-                            900: '#0c4a6e',
-                        }
-                    }
-                }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Corretor Visual IA - Correção de Provas em Tempo Real</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
             }
+          }
         }
-    </script>
-    <!-- Font Inter & Icons SVG -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
-        /* Visual Bounding Box Overlay Canvas */
-        .bounding-box {
-            position: absolute;
-            border: 2px solid;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            display: flex;
-            align-items: flex-start;
-            padding: 2px 4px;
-        }
-        .bounding-box:hover, .bounding-box:active {
-            transform: scale(1.02);
-            z-index: 30;
-        }
-        .bg-grid-pattern {
-            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
-            background-size: 16px 16px;
-        }
-    </style>
+      }
+    }
+  </script>
+  <style>
+    /* Transições suaves e scrollbar estilizado */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    
+    .pulse-glow {
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+      animation: pulse-animation 2s infinite;
+    }
+    @keyframes pulse-animation {
+      0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+      70% { box-shadow: 0 0 0 12px rgba(99, 102, 241, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+    }
+  </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col pb-20 md:pb-0">
+<body class="h-full flex flex-col font-sans antialiased selection:bg-brand-500 selection:text-white bg-slate-950">
 
-    <!-- Top Navigation Header (Desktop + General Title) -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-md">
-                    ✓
-                </div>
-                <div>
-                    <h1 class="text-lg font-bold text-slate-900 leading-tight">Corretor Visual <span class="text-sky-600">IA</span></h1>
-                    <p class="text-xs text-slate-500">Correção Multimodal de Provas Mistas</p>
-                </div>
-            </div>
+  <!-- CABEÇALHO PRINCIPAL -->
+  <header class="bg-slate-900/90 backdrop-blur border-b border-slate-800 sticky top-0 z-40 px-4 py-3">
+    <div class="max-w-5xl mx-auto flex items-center justify-between gap-2">
+      <div class="flex items-center space-x-2">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-brand-500/20">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="font-bold text-base md:text-lg leading-tight tracking-tight text-white flex items-center gap-1.5">
+            Corretor Visual <span class="bg-gradient-to-r from-brand-500 to-cyan-400 bg-clip-text text-transparent">IA</span>
+          </h1>
+          <p class="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">Visão Computacional Gemini</p>
+        </div>
+      </div>
 
-            <!-- Navigation Tabs (Desktop) -->
-            <nav class="hidden md:flex items-center space-x-1 bg-slate-100 p-1 rounded-xl">
-                <button onclick="switchTab('gabarito')" id="tab-btn-desktop-gabarito" class="tab-btn-desktop px-4 py-2 text-sm font-medium rounded-lg transition-all">
-                    📋 Gabarito
-                </button>
-                <button onclick="switchTab('corrigir')" id="tab-btn-desktop-corrigir" class="tab-btn-desktop px-4 py-2 text-sm font-medium rounded-lg transition-all">
-                    📷 Corrigir Prova
-                </button>
-                <button onclick="switchTab('diario')" id="tab-btn-desktop-diario" class="tab-btn-desktop px-4 py-2 text-sm font-medium rounded-lg transition-all">
-                    📊 Diário de Notas
-                </button>
-            </nav>
+      <div class="flex items-center space-x-2">
+        <!-- Indicador da Chave da API -->
+        <button id="btnApiKey" onclick="openApiKeyModal()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors bg-slate-800 border-slate-700 hover:border-slate-600 text-slate-300">
+          <span id="apiStatusDot" class="w-2 h-2 rounded-full bg-red-500"></span>
+          <span id="apiStatusText" class="hidden sm:inline">Sem Chave API</span>
+          <svg class="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
 
-            <!-- API Key / Settings Modal Trigger -->
-            <button onclick="toggleConfigModal(true)" class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors flex items-center space-x-1 text-xs font-medium border border-slate-200">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                <span>Configurar API</span>
+  <!-- NAVEGAÇÃO ENTRE ABAS -->
+  <nav class="bg-slate-900 border-b border-slate-800 px-4">
+    <div class="max-w-5xl mx-auto flex space-x-1">
+      <button onclick="switchTab('corrigir')" id="tabBtnCorrigir" class="tab-btn flex-1 py-2.5 px-3 text-xs sm:text-sm font-semibold border-b-2 text-brand-500 border-brand-500 flex items-center justify-center space-x-2 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        <span>1. Corrigir (Câmera)</span>
+      </button>
+
+      <button onclick="switchTab('gabarito')" id="tabBtnGabarito" class="tab-btn flex-1 py-2.5 px-3 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center space-x-2 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        <span>2. Gabarito <span class="hidden xs:inline text-[10px] uppercase tracking-wider bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded ml-1">Opcional</span></span>
+      </button>
+
+      <button onclick="switchTab('diario')" id="tabBtnDiario" class="tab-btn flex-1 py-2.5 px-3 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center space-x-2 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+        <span>3. Diário de Notas</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- CONTEÚDO PRINCIPAL (3 ABAS) -->
+  <main class="flex-1 max-w-5xl w-full mx-auto p-3 sm:p-5 flex flex-col min-h-0 overflow-y-auto">
+
+    <!-- ================= ABA 1: CORRIGIR (CÂMERA) ================= -->
+    <section id="tabCorrigir" class="flex-1 flex flex-col space-y-3">
+      
+      <!-- Banner de Modo Ativo -->
+      <div id="modeBanner" class="bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 flex items-center justify-between text-xs sm:text-sm shadow-sm transition-all">
+        <div class="flex items-center space-x-2">
+          <span id="modeIcon" class="p-1 rounded-md bg-emerald-500/20 text-emerald-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </span>
+          <div>
+            <span class="font-semibold text-slate-200" id="modeTitle">Modo Autônomo Ativo</span>
+            <p class="text-[11px] text-slate-400" id="modeDesc">IA investiga e resolve a prova sem gabarito prévio.</p>
+          </div>
+        </div>
+        <button onclick="switchTab('gabarito')" class="text-xs text-brand-400 hover:text-brand-300 font-medium underline shrink-0 ml-2">
+          Anexar Gabarito
+        </button>
+      </div>
+
+      <!-- Container Visualizador (Vídeo / Imagem + Canvas de Bounding Boxes) -->
+      <div class="relative w-full bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center min-h-[300px] max-h-[65vh] group">
+        
+        <!-- Video Stream da Câmera -->
+        <video id="videoElement" autoplay playsinline class="w-full h-full object-contain max-h-[65vh] hidden"></video>
+
+        <!-- Imagem Estática (quando congelado ou enviado por arquivo) -->
+        <img id="staticImage" class="w-full h-full object-contain max-h-[65vh] hidden" alt="Prova do Aluno" />
+
+        <!-- Canvas Transparente Sobreposto para desenhar os Retângulos (Bounding Boxes) -->
+        <canvas id="overlayCanvas" class="absolute top-0 left-0 w-full h-full pointer-events-auto cursor-pointer"></canvas>
+
+        <!-- Placeholder quando a Câmera está Desligada -->
+        <div id="cameraPlaceholder" class="flex flex-col items-center justify-center p-8 text-center space-y-4">
+          <div class="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-200 text-sm sm:text-base">Câmera Desligada</h3>
+            <p class="text-xs text-slate-400 max-w-xs mt-1">Ligue a câmera traseira ou envie uma foto da folha de prova para o Gemini analisar.</p>
+          </div>
+          <div class="flex flex-wrap gap-2 justify-center pt-2">
+            <button onclick="startCamera()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl font-medium text-xs sm:text-sm flex items-center space-x-2 shadow-lg shadow-brand-600/30 transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span>Ligar Câmera Ao Vivo</span>
             </button>
+            <button onclick="document.getElementById('fileExamInput').click()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-xl font-medium text-xs sm:text-sm flex items-center space-x-2 transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              <span>Enviar Foto</span>
+            </button>
+          </div>
         </div>
-    </header>
 
-    <!-- Main Container -->
-    <main class="max-w-7xl mx-auto w-full px-4 py-6 flex-1">
-
-        <!-- ================= ABA 1: GABARITO ================= -->
-        <section id="view-gabarito" class="tab-view space-y-6">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                <div>
-                    <h2 class="text-xl font-bold text-slate-900">Gabarito da Prova</h2>
-                    <p class="text-xs text-slate-500 mt-1">Defina as questões, o tipo de avaliação e os critérios para a Inteligência Artificial.</p>
-                </div>
-                <div class="flex items-center space-x-3">
-                    <button onclick="carregarGabaritoExemplo()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-all border border-slate-300">
-                        ⚡ Carregar Exemplo Misto
-                    </button>
-                    <div class="px-4 py-2 bg-sky-50 border border-sky-200 rounded-xl text-center">
-                        <span class="block text-[10px] text-sky-600 uppercase font-bold tracking-wider">Pontuação Total</span>
-                        <span id="total-pontos-gabarito" class="text-lg font-bold text-sky-800">0.0 pts</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Form Adicionar Questão -->
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                <h3 class="text-sm font-semibold text-slate-700 uppercase tracking-wider">Cadastrar Nova Questão</h3>
-                <form id="form-questao" onsubmit="adicionarQuestao(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Identificador</label>
-                        <input type="text" id="q-id" placeholder="Ex: Q1" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none">
-                    </div>
-                    <div class="sm:col-span-3">
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Tipo da Questão</label>
-                        <select id="q-tipo" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none bg-white">
-                            <option value="Objetiva">Objetiva (Múltipla Escolha)</option>
-                            <option value="Cálculo">Cálculo Manuscrito / Passo a Passo</option>
-                            <option value="Discursiva">Discursiva / Texto Livre</option>
-                        </select>
-                    </div>
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Valor Max (pts)</label>
-                        <input type="number" id="q-valor" step="0.5" min="0.5" max="100" placeholder="2.0" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none">
-                    </div>
-                    <div class="sm:col-span-5">
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Critério / Resposta Esperada</label>
-                        <input type="text" id="q-criterio" placeholder="Ex: Alternativa C ou fórmula F=m.a aplicada..." required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none">
-                    </div>
-                    <div class="sm:col-span-12 flex justify-end">
-                        <button type="submit" class="w-full sm:w-auto px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-xl shadow transition-all">
-                            + Adicionar Questão
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Lista de Questões -->
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="px-5 py-4 border-b border-slate-200 flex justify-between items-center">
-                    <h3 class="font-bold text-slate-800">Questões do Gabarito (<span id="count-questoes">0</span>)</h3>
-                    <button onclick="limparGabarito()" class="text-xs text-red-600 hover:underline">Limpar Gabarito</button>
-                </div>
-                <div id="lista-questoes-gabarito" class="divide-y divide-slate-100">
-                    <!-- Preenchido via JavaScript -->
-                </div>
-            </div>
-        </section>
-
-
-        <!-- ================= ABA 2: CORRIGIR PROVA ================= -->
-        <section id="view-corrigir" class="tab-view space-y-6 hidden">
-            <!-- Modalidade de Captura -->
-            <div id="camera-section" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div>
-                        <h2 class="text-xl font-bold text-slate-900">Capturar ou Enviar Folha da Prova</h2>
-                        <p class="text-xs text-slate-500">Posicione a prova na tela ou envie uma foto nítida da sua galeria.</p>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <label class="cursor-pointer px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-300 transition-all flex items-center space-x-1">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            <span>Enviar da Galeria</span>
-                            <input type="file" id="input-galeria" accept="image/*" class="hidden" onchange="handleFileUpload(event)">
-                        </label>
-                        <button onclick="iniciarCamera()" id="btn-iniciar-camera" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded-xl transition-all shadow">
-                            📷 Ligar Câmera Traseira
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Viewfinder da Câmera -->
-                <div id="camera-container" class="relative hidden bg-slate-900 rounded-xl overflow-hidden aspect-[3/4] max-w-md mx-auto shadow-inner flex items-center justify-center">
-                    <video id="video-stream" autoplay playsinline class="w-full h-full object-cover"></video>
-                    <!-- Guia de Alinhamento -->
-                    <div class="absolute inset-4 border-2 border-dashed border-sky-400/70 rounded-lg pointer-events-none flex flex-col justify-between p-3">
-                        <div class="text-sky-300 text-[10px] font-mono bg-slate-900/80 px-2 py-0.5 rounded w-max">Topo da Folha</div>
-                        <div class="text-sky-300 text-[10px] font-mono bg-slate-900/80 px-2 py-0.5 rounded w-max self-end">Alinhar Prova Aqui</div>
-                    </div>
-                    <!-- Botão de Disparo -->
-                    <button onclick="capturarFoto()" class="absolute bottom-4 left-1/2 -translate-x-1/2 w-16 h-16 bg-white border-4 border-sky-500 rounded-full shadow-lg active:scale-95 transition-transform flex items-center justify-center">
-                        <div class="w-12 h-12 bg-sky-600 rounded-full"></div>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Loader / Indicador de Processamento da IA -->
-            <div id="ai-loading" class="hidden bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center space-y-4">
-                <div class="inline-block animate-spin w-12 h-12 border-4 border-sky-600 border-t-transparent rounded-full"></div>
-                <div>
-                    <h3 class="text-base font-bold text-slate-800">IA Processando a Prova...</h3>
-                    <p class="text-xs text-slate-500 mt-1" id="loading-status">Lendo manuscritos, conferindo gabarito e localizando respostas...</p>
-                </div>
-            </div>
-
-            <!-- Área de Resultado da Correção -->
-            <div id="resultado-correcao" class="hidden space-y-6">
-                <!-- Cabeçalho do Aluno & Nota Final -->
-                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    <div class="w-full md:w-auto space-y-1">
-                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Nome do Aluno</label>
-                        <input type="text" id="aluno-nome-input" class="text-lg font-bold text-slate-900 border-b border-dashed border-slate-300 focus:border-sky-500 focus:outline-none w-full md:w-80 pb-0.5 bg-transparent" placeholder="Nome do Aluno">
-                    </div>
-                    <div class="flex items-center space-x-4 w-full md:w-auto justify-between md:justify-end">
-                        <div class="text-right">
-                            <span class="block text-xs text-slate-500">Nota Sugerida</span>
-                            <span id="nota-total-calculada" class="text-3xl font-extrabold text-sky-600">0.0</span>
-                            <span id="nota-maxima-total" class="text-sm font-semibold text-slate-400">/ 10.0</span>
-                        </div>
-                        <button onclick="salvarNoDiario()" class="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow-md transition-all flex items-center space-x-1">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            <span>Salvar no Diário</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Canvas Visual com Bounding Boxes Overlay -->
-                <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-xl space-y-2">
-                    <div class="flex justify-between items-center text-xs text-slate-400 px-1">
-                        <span>📷 Visualização Interativa da Prova (Toque em uma marcação para editar)</span>
-                        <div class="flex items-center space-x-3 text-[11px]">
-                            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block mr-1"></span>Correto</span>
-                            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block mr-1"></span>Parcial</span>
-                            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block mr-1"></span>Errado</span>
-                        </div>
-                    </div>
-
-                    <!-- Container Relativo da Imagem e Boxes -->
-                    <div id="image-canvas-container" class="relative w-full max-w-3xl mx-auto overflow-hidden rounded-xl bg-slate-950 flex justify-center items-center">
-                        <img id="prova-img-preview" src="" alt="Folha da prova" class="w-full h-auto object-contain max-h-[75vh]">
-                        <!-- As bounding boxes são renderizadas via JS dentro deste container -->
-                        <div id="bounding-boxes-layer" class="absolute inset-0 pointer-events-auto"></div>
-                    </div>
-                </div>
-
-                <!-- Lista Detalhada das Questões Corrigidas -->
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden space-y-3 p-5">
-                    <h3 class="font-bold text-slate-800 text-base">Detalhamento das Questões Avaliadas</h3>
-                    <div id="lista-correcoes-detalhada" class="space-y-3">
-                        <!-- Preenchido dinamicamente via JS -->
-                    </div>
-                </div>
-            </div>
-        </section>
-
-
-        <!-- ================= ABA 3: DIÁRIO DE NOTAS ================= -->
-        <section id="view-diario" class="tab-view space-y-6 hidden">
-            <!-- Cabeçalho e Ações Gerais -->
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                <div>
-                    <h2 class="text-xl font-bold text-slate-900">Diário de Notas da Turma</h2>
-                    <p class="text-xs text-slate-500 mt-1">Acompanhamento de desempenho, métricas estatísticas e exportação em CSV.</p>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <button onclick="simularTurmaExemplo()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-all border border-slate-300">
-                        ⚡ Simular Turma (6 Alunos)
-                    </button>
-                    <button onclick="exportarCSV()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow transition-all flex items-center space-x-1">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        <span>Exportar CSV</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Painel de Estatísticas da Turma em Cards -->
-            <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
-                <!-- Card N -->
-                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Provas (N)</span>
-                    <div id="stat-total" class="text-2xl font-extrabold text-slate-900">0</div>
-                    <span class="text-[10px] text-slate-500">Alunos corrigidos</span>
-                </div>
-                <!-- Card Média -->
-                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Média Aritmética</span>
-                    <div id="stat-media" class="text-2xl font-extrabold text-sky-600">0.00</div>
-                    <span class="text-[10px] text-slate-500">Média geral das notas</span>
-                </div>
-                <!-- Card Mediana -->
-                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Mediana</span>
-                    <div id="stat-mediana" class="text-2xl font-extrabold text-indigo-600">0.00</div>
-                    <span class="text-[10px] text-slate-500">Ponto central da turma</span>
-                </div>
-                <!-- Card Moda -->
-                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Moda</span>
-                    <div id="stat-moda" class="text-xl font-extrabold text-emerald-600 truncate">Amodal</div>
-                    <span class="text-[10px] text-slate-500">Nota mais frequente</span>
-                </div>
-                <!-- Card Desvio Padrão -->
-                <div class="col-span-2 lg:col-span-1 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Desvio Padrão (σ)</span>
-                    <div id="stat-desvio" class="text-2xl font-extrabold text-amber-600">0.00</div>
-                    <span class="text-[10px] text-slate-500">Variabilidade populacional</span>
-                </div>
-            </div>
-
-            <!-- Tabela de Alunos -->
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="px-5 py-4 border-b border-slate-200 flex justify-between items-center">
-                    <h3 class="font-bold text-slate-800">Histórico de Alunos</h3>
-                    <button onclick="limparDiario()" class="text-xs text-red-600 hover:underline">Limpar Todo o Diário</button>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-slate-700">
-                        <thead class="bg-slate-50 text-xs font-semibold text-slate-500 uppercase border-b border-slate-200">
-                            <tr>
-                                <th class="px-5 py-3">Aluno</th>
-                                <th class="px-5 py-3">Data/Hora</th>
-                                <th class="px-5 py-3">Nota / Máxima</th>
-                                <th class="px-5 py-3">Aproveitamento (%)</th>
-                                <th class="px-5 py-3 text-right">Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabela-diario-body" class="divide-y divide-slate-100">
-                            <!-- Preenchido via JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Bottom Navigation Bar (Mobile) -->
-    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40 flex justify-around p-2 shadow-lg">
-        <button onclick="switchTab('gabarito')" id="tab-btn-mobile-gabarito" class="tab-btn-mobile flex flex-col items-center p-2 text-xs font-medium rounded-xl transition-all w-1/3">
-            <span class="text-base mb-0.5">📋</span>
-            <span>Gabarito</span>
-        </button>
-        <button onclick="switchTab('corrigir')" id="tab-btn-mobile-corrigir" class="tab-btn-mobile flex flex-col items-center p-2 text-xs font-medium rounded-xl transition-all w-1/3">
-            <span class="text-base mb-0.5">📷</span>
-            <span>Corrigir</span>
-        </button>
-        <button onclick="switchTab('diario')" id="tab-btn-mobile-diario" class="tab-btn-mobile flex flex-col items-center p-2 text-xs font-medium rounded-xl transition-all w-1/3">
-            <span class="text-base mb-0.5">📊</span>
-            <span>Diário</span>
-        </button>
-    </nav>
-
-
-    <!-- ================= MODAL AJUSTE RÁPIDO DA QUESTÃO ================= -->
-    <div id="modal-edicao-questao" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-4 relative animate-in fade-in zoom-in duration-150">
-            <button onclick="fecharModalEdicao()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
-            
-            <div class="flex items-center space-x-2">
-                <span id="modal-q-badge" class="px-2.5 py-1 bg-sky-100 text-sky-800 font-bold text-xs rounded-lg">Q1</span>
-                <h3 class="text-lg font-bold text-slate-900">Ajuste Manual da Questão</h3>
-            </div>
-
-            <!-- Botões Rápidos de Status -->
-            <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Status da Resposta</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <button onclick="setModalStatus('correto')" id="btn-status-correto" class="py-2 text-xs font-bold rounded-xl border border-slate-300 transition-all flex items-center justify-center space-x-1">
-                        <span>✅ Correto</span>
-                    </button>
-                    <button onclick="setModalStatus('parcial')" id="btn-status-parcial" class="py-2 text-xs font-bold rounded-xl border border-slate-300 transition-all flex items-center justify-center space-x-1">
-                        <span>⚠️ Parcial</span>
-                    </button>
-                    <button onclick="setModalStatus('errado')" id="btn-status-errado" class="py-2 text-xs font-bold rounded-xl border border-slate-300 transition-all flex items-center justify-center space-x-1">
-                        <span>❌ Errado</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Nota Atribuída -->
-            <div>
-                <div class="flex justify-between text-xs font-medium text-slate-600 mb-1">
-                    <span>Pontuação Concedida</span>
-                    <span>Máx: <strong id="modal-nota-max">0.0</strong> pts</span>
-                </div>
-                <input type="number" id="modal-nota-input" step="0.25" min="0" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-base font-bold text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none">
-            </div>
-
-            <!-- Transcrição Lido pela IA -->
-            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1">
-                <span class="font-bold text-slate-600 uppercase">Transcrição da Resposta:</span>
-                <p id="modal-transcricao" class="text-slate-800 italic">"..."</p>
-            </div>
-
-            <!-- Justificativa da IA -->
-            <div class="bg-sky-50/70 p-3 rounded-xl border border-sky-100 text-xs space-y-1">
-                <span class="font-bold text-sky-800 uppercase">Parecer da IA:</span>
-                <p id="modal-justificativa" class="text-sky-900">...</p>
-            </div>
-
-            <!-- Ações -->
-            <div class="flex justify-end space-x-2 pt-2">
-                <button onclick="salvarModalEdicao()" class="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm rounded-xl shadow transition-all">
-                    Confirmar Alterações
-                </button>
-            </div>
+        <!-- Indicator de Status de Leitura ao Vivo (Overlay sobre a câmera) -->
+        <div id="liveStatusBadge" class="absolute top-3 left-3 bg-slate-950/80 backdrop-blur border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs text-white flex items-center space-x-2 hidden z-10 shadow-lg">
+          <span id="scanStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span id="scanStatusText" class="font-medium text-slate-200">Leitura Ao Vivo Ativa</span>
         </div>
+
+        <!-- Overlay de Carregamento da IA -->
+        <div id="loadingOverlay" class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm flex flex-col items-center justify-center space-y-3 z-20 hidden">
+          <div class="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+          <p id="loadingOverlayText" class="text-sm font-semibold text-white tracking-wide">Analizando Prova com IA...</p>
+          <span class="text-xs text-slate-400">Verificando questões, transcrições e respostas</span>
+        </div>
+      </div>
+
+      <!-- Barra de Controles da Câmera -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2 shadow-sm">
+        
+        <!-- Lado Esquerdo: Auto-Scan Toggle & Ligar/Desligar -->
+        <div class="flex items-center space-x-3">
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="autoScanToggle" checked class="sr-only peer" onchange="toggleAutoScan(this.checked)">
+            <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+            <span class="ml-2 text-xs font-semibold text-slate-300 select-none">Leitura Automática</span>
+          </label>
+
+          <button id="btnToggleCamera" onclick="toggleCamera()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium border border-slate-700 transition-colors flex items-center space-x-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+            <span id="btnToggleCameraText">Ligar Câmera</span>
+          </button>
+        </div>
+
+        <!-- Lado Direito: Ações rápidas (Congelar, Capturar, Enviar Foto) -->
+        <div class="flex items-center space-x-2">
+          <button id="btnFreeze" onclick="toggleFreeze()" disabled class="px-3 py-1.5 bg-slate-800 text-slate-400 rounded-lg text-xs font-medium border border-slate-700 transition-colors flex items-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span id="btnFreezeText">Congelar & Revisar</span>
+          </button>
+
+          <button id="btnCaptureNow" onclick="captureAndAnalyzeNow()" disabled class="px-3 py-1.5 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-all flex items-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+            </svg>
+            <span>Capturar Agora</span>
+          </button>
+
+          <input type="file" id="fileExamInput" accept="image/*" class="hidden" onchange="handleExamFileUpload(event)" />
+          <button onclick="document.getElementById('fileExamInput').click()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium border border-slate-700 transition-colors flex items-center space-x-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            <span class="hidden sm:inline">Enviar Foto</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Barra Inferior de Fechamento da Prova (Aparece após análise) -->
+      <div id="footerFinalizeBar" class="bg-slate-900 border border-slate-800 rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg hidden">
+        <div class="flex items-center space-x-3 w-full sm:w-auto">
+          <div class="flex-1 sm:w-64">
+            <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1">Nome do Aluno (Detectado pela IA)</label>
+            <input type="text" id="inputAlunoName" placeholder="Digite o nome..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs sm:text-sm text-white focus:outline-none focus:border-brand-500" />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between sm:justify-end space-x-4 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800">
+          <div class="text-right">
+            <span class="block text-[10px] uppercase font-bold text-slate-400">Nota Total</span>
+            <div id="totalScoreDisplay" class="text-lg sm:text-xl font-extrabold text-emerald-400">0.0 / 0.0</div>
+          </div>
+
+          <button onclick="saveCurrentToDiario()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs sm:text-sm shadow-lg shadow-emerald-600/20 flex items-center space-x-2 transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span>Salvar no Diário</span>
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= ABA 2: GABARITO (OPCIONAL) ================= -->
+    <section id="tabGabarito" class="flex-1 flex flex-col space-y-4 hidden">
+      
+      <!-- Callout informativo -->
+      <div class="bg-indigo-950/40 border border-indigo-800/60 rounded-2xl p-4 flex items-start space-x-3">
+        <div class="p-2 bg-indigo-500/20 rounded-xl text-indigo-400 shrink-0">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <div class="text-xs sm:text-sm text-indigo-200">
+          <h4 class="font-bold text-white text-sm sm:text-base">Gabarito de Referência (Totalmente Opcional)</h4>
+          <p class="mt-1 text-slate-300">
+            Se você não enviar nada aqui, a IA do Gemini resolverá a prova de forma <strong>autônoma</strong> e fará a correção por conta própria. Anexe um gabarito em PDF, imagem ou texto apenas se quiser padronizar respostas oficiais ou critérios de pontuação específicos!
+          </p>
+        </div>
+      </div>
+
+      <!-- Upload de Gabarito (PDF ou Imagem) -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-sm">
+        <h3 class="font-semibold text-slate-200 text-sm sm:text-base flex items-center space-x-2">
+          <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+          </svg>
+          <span>Arquivo de Gabarito (PDF ou Imagem)</span>
+        </h3>
+
+        <!-- Dropzone de Arquivo -->
+        <div id="gabaritoDropzone" class="border-2 border-dashed border-slate-700 hover:border-brand-500 rounded-xl p-6 text-center transition-all bg-slate-950/50 cursor-pointer" onclick="document.getElementById('fileGabaritoInput').click()">
+          <input type="file" id="fileGabaritoInput" accept="application/pdf,image/*" class="hidden" onchange="handleGabaritoFileUpload(event)" />
+          
+          <div id="gabaritoEmptyView" class="flex flex-col items-center justify-center space-y-2">
+            <div class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+              </svg>
+            </div>
+            <p class="text-xs sm:text-sm font-medium text-slate-300">Clique para selecionar PDF ou Imagem do Gabarito</p>
+            <p class="text-[11px] text-slate-500">Suporta arquivos PDF (gabaritos em formato de documento) ou imagens JPG/PNG</p>
+          </div>
+
+          <div id="gabaritoLoadedView" class="hidden flex items-center justify-between bg-slate-800/80 p-3 rounded-xl border border-slate-700 text-left">
+            <div class="flex items-center space-x-3 overflow-hidden">
+              <div id="gabaritoIconPreview" class="w-10 h-10 rounded-lg bg-brand-600/20 text-brand-400 flex items-center justify-center shrink-0">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+              </div>
+              <div class="truncate">
+                <p id="gabaritoFileName" class="text-xs sm:text-sm font-semibold text-white truncate">gabarito.pdf</p>
+                <p id="gabaritoFileType" class="text-[10px] text-slate-400">PDF Document • Carregado</p>
+              </div>
+            </div>
+
+            <button onclick="removeGabaritoFile(event)" class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg text-xs font-semibold transition-colors shrink-0">
+              Remover
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Critérios Adicionais em Texto -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-3 shadow-sm">
+        <div class="flex items-center justify-between">
+          <label class="font-semibold text-slate-200 text-sm sm:text-base flex items-center space-x-2">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+            <span>Critérios ou Observações de Correção (Texto)</span>
+          </label>
+          <div class="flex space-x-2">
+            <button onclick="loadGabaritoExample()" class="text-xs text-brand-400 hover:text-brand-300 font-medium underline">Carregar Exemplo</button>
+            <button onclick="clearGabaritoText()" class="text-xs text-slate-400 hover:text-slate-300 font-medium">Limpar</button>
+          </div>
+        </div>
+
+        <textarea id="gabaritoText" rows="4" placeholder="Exemplo: Questão 1: Gabarito A (Vale 2.0 pontos). Questão 2: Resposta deve mencionar Fotossíntese e Cloroplastos. Ser tolerante a erros ortográficos." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm text-slate-200 focus:outline-none focus:border-brand-500 resize-y"></textarea>
+      </div>
+
+    </section>
+
+    <!-- ================= ABA 3: DIÁRIO DE NOTAS ================= -->
+    <section id="tabDiario" class="flex-1 flex flex-col space-y-4 hidden">
+      
+      <!-- Cards de Estatísticas da Turma -->
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 text-center shadow-sm">
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Provas</span>
+          <span id="statTotalProvas" class="text-lg sm:text-2xl font-extrabold text-white mt-0.5 block">0</span>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 text-center shadow-sm">
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Média Turma</span>
+          <span id="statMedia" class="text-lg sm:text-2xl font-extrabold text-emerald-400 mt-0.5 block">0.0</span>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 text-center shadow-sm">
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Mediana</span>
+          <span id="statMediana" class="text-lg sm:text-2xl font-extrabold text-brand-400 mt-0.5 block">0.0</span>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 text-center shadow-sm">
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Moda</span>
+          <span id="statModa" class="text-xs sm:text-sm font-bold text-cyan-400 mt-1 block truncate">N/A</span>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 text-center col-span-2 sm:col-span-1 shadow-sm">
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Desvio Padrão</span>
+          <span id="statDesvioPadrao" class="text-lg sm:text-2xl font-extrabold text-amber-400 mt-0.5 block">0.00</span>
+        </div>
+      </div>
+
+      <!-- Barra de Ações do Diário (Exportar e Limpar) -->
+      <div class="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-2xl p-3">
+        <h3 class="font-bold text-slate-200 text-sm sm:text-base">Histórico de Alunos Avaliados</h3>
+        <div class="flex items-center space-x-2">
+          <button onclick="exportToCSV()" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-md flex items-center space-x-1.5 transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <span>Exportar CSV (Excel)</span>
+          </button>
+          <button onclick="clearDiarioHistory()" class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-xs font-semibold transition-colors">
+            Limpar Tudo
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabela Responsiva de Alunos -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-sm flex-1 flex flex-col">
+        <div class="overflow-x-auto flex-1">
+          <table class="w-full text-left border-collapse text-xs sm:text-sm">
+            <thead>
+              <tr class="bg-slate-950/60 border-b border-slate-800 text-slate-400 text-[11px] uppercase tracking-wider">
+                <th class="p-3 font-semibold">Aluno</th>
+                <th class="p-3 font-semibold text-center">Nota / Máx</th>
+                <th class="p-3 font-semibold text-center">Aproveitamento</th>
+                <th class="p-3 font-semibold text-center">Data / Hora</th>
+                <th class="p-3 font-semibold text-right">Ação</th>
+              </tr>
+            </thead>
+            <tbody id="diarioTableBody" class="divide-y divide-slate-800/60 text-slate-200">
+              <!-- Conteúdo Dinâmico -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="diarioEmptyState" class="p-8 text-center text-slate-500 text-xs sm:text-sm">
+          Nenhuma prova salva no diário ainda. Corrija uma prova na aba 1 e clique em "Salvar no Diário".
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- MODAL DE REVISÃO E EDIÇÃO DE QUESTÃO (Abre ao tocar no retângulo colorido) -->
+  <div id="modalReview" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl transform transition-all animate-in fade-in zoom-in duration-200">
+      
+      <!-- Cabeçalho do Modal -->
+      <div class="bg-slate-950 p-4 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <span id="modalQuestaoBadge" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+            Questão 1
+          </span>
+          <h3 class="font-bold text-white text-sm sm:text-base">Detalhes & Revisão do Professor</h3>
+        </div>
+        <button onclick="closeModalReview()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Corpo do Modal -->
+      <div class="p-4 space-y-4 text-xs sm:text-sm max-h-[75vh] overflow-y-auto">
+        
+        <!-- Transcrição do Aluno -->
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Resposta Transcrita do Aluno</span>
+          <p id="modalTranscricao" class="text-slate-200 font-medium italic">"Carregando..."</p>
+        </div>
+
+        <!-- Justificativa da IA -->
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Análise & Justificativa da IA</span>
+          <p id="modalJustificativa" class="text-slate-300">"Carregando..."</p>
+        </div>
+
+        <!-- Alterar Status Rápido -->
+        <div class="space-y-1.5">
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Alterar Avaliação da Questão</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="setQuestaoStatus('correto')" id="btnStatusCorreto" class="py-2 px-3 rounded-xl font-semibold border text-center transition-all flex items-center justify-center space-x-1 bg-slate-800 border-slate-700 text-slate-300">
+              <span>✅ Correto</span>
+            </button>
+            <button onclick="setQuestaoStatus('parcial')" id="btnStatusParcial" class="py-2 px-3 rounded-xl font-semibold border text-center transition-all flex items-center justify-center space-x-1 bg-slate-800 border-slate-700 text-slate-300">
+              <span>⚠️ Meio Certo</span>
+            </button>
+            <button onclick="setQuestaoStatus('errado')" id="btnStatusErrado" class="py-2 px-3 rounded-xl font-semibold border text-center transition-all flex items-center justify-center space-x-1 bg-slate-800 border-slate-700 text-slate-300">
+              <span>❌ Errado</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Ajustar Nota Obtida / Nota Máxima -->
+        <div class="grid grid-cols-2 gap-3 pt-2">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nota Obtida</label>
+            <input type="number" step="0.25" min="0" id="modalInputNotaObtida" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold text-sm focus:outline-none focus:border-brand-500" onchange="updateModalNotaObtida(this.value)" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nota Máxima</label>
+            <input type="number" step="0.25" min="0" id="modalInputNotaMaxima" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold text-sm focus:outline-none focus:border-brand-500" onchange="updateModalNotaMaxima(this.value)" />
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Rodapé do Modal -->
+      <div class="bg-slate-950 p-3 border-t border-slate-800 flex justify-end">
+        <button onclick="saveModalChanges()" class="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all">
+          Confirmar Alterações
+        </button>
+      </div>
     </div>
+  </div>
 
+  <!-- MODAL DE CONFIGURAÇÃO DA CHAVE DE API GEMINI -->
+  <div id="modalApiKey" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-white text-base flex items-center space-x-2">
+          <svg class="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+          </svg>
+          <span>Configurar Chave da API Gemini</span>
+        </h3>
+        <button onclick="closeApiKeyModal()" class="text-slate-400 hover:text-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
 
-    <!-- ================= MODAL CONFIGURAÇÃO GEMINI API KEY ================= -->
-    <div id="modal-config" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-4 relative">
-            <button onclick="toggleConfigModal(false)" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+      <p class="text-xs text-slate-300">
+        O Gemini oferece um <strong>plano 100% gratuito</strong> para uso da API. Sua chave é salva exclusivamente no navegador do seu dispositivo.
+      </p>
 
-            <h3 class="text-lg font-bold text-slate-900">Configurações da API Gemini</h3>
-            <p class="text-xs text-slate-500 leading-relaxed">
-                Insira sua chave de API do Google Gemini. Se deixado em branco, o sistema usará a chave padrão do ambiente.
-            </p>
+      <div>
+        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Sua API Key do Google Gemini</label>
+        <input type="password" id="inputApiKey" placeholder="Cole sua chave AIza..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-brand-500 font-mono" />
+      </div>
 
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Gemini API Key</label>
-                <input type="password" id="input-api-key" placeholder="AIzaSy..." class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none font-mono">
-            </div>
+      <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
+        <span>Não tem uma chave ainda?</span>
+        <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" class="text-brand-400 hover:underline font-semibold flex items-center space-x-1">
+          <span>Obter no Google AI Studio</span>
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+          </svg>
+        </a>
+      </div>
 
-            <div class="flex justify-end space-x-2 pt-2">
-                <button onclick="salvarConfigApiKey()" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm rounded-xl shadow">
-                    Salvar Chave
-                </button>
-            </div>
-        </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button onclick="closeApiKeyModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold">
+          Cancelar
+        </button>
+        <button onclick="saveApiKey()" class="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold shadow-md">
+          Salvar Chave
+        </button>
+      </div>
     </div>
+  </div>
 
+  <!-- TOAST DE NOTIFICAÇÃO FLUTUANTE -->
+  <div id="toastNotification" class="fixed bottom-5 right-5 z-50 bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none max-w-sm">
+    <span id="toastIcon" class="text-emerald-400">✅</span>
+    <span id="toastText" class="text-xs sm:text-sm font-medium">Notificação</span>
+  </div>
 
-    <!-- JAVASCRIPT PRINCIPAL DO APLICATIVO -->
-    <script>
-        // ================= ESTADO DA APLICAÇÃO =================
-        let estado = {
-            abaAtiva: 'gabarito',
-            gabarito: [],
-            diario: [],
-            correcaoAtual: null, // { fotoUrl, nomeAluno, notaTotal, notaMaxima, correcoes: [] }
-            questaoEmEdicaoIndex: null,
-            cameraStream: null,
-            customApiKey: localStorage.getItem('corretor_api_key') || ''
+  <!-- SCRIPT COMPLETO DA APLICAÇÃO -->
+  <script>
+    /* ==========================================================================
+       ESTADO DA APLICAÇÃO (STATE MANAGEMENT)
+       ========================================================================== */
+    const STATE = {
+      apiKey: localStorage.getItem('gemini_api_key') || '',
+      activeTab: 'corrigir',
+      
+      // Câmera & Leitura
+      isCameraActive: false,
+      isAutoScan: true,
+      isScanning: false, // Trava de requisição pendente
+      isFrozen: false,
+      mediaStream: null,
+      autoScanIntervalTimer: null,
+      
+      // Gabarito Opcional
+      gabaritoFile: null, // { base64: string, mimeType: string, name: string, isPdf: boolean }
+      gabaritoTexto: '',
+
+      // Análise Atual
+      currentAnalysis: null, // { aluno: string, questoes: Array<{ id, numero, status, nota_obtida, nota_maxima, transcricao, justificativa, box_2d }> }
+      currentExamImageBase64: null,
+      selectedQuestaoId: null,
+
+      // Diário de Notas
+      diario: JSON.parse(localStorage.getItem('gemini_corretor_diario') || '[]')
+    };
+
+    /* ==========================================================================
+       INICIALIZAÇÃO & EVENT LISTENERS
+       ========================================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      updateApiStatusUI();
+      renderDiarioTable();
+      updateModeBanner();
+      
+      // Redimensionar canvas em resize
+      window.addEventListener('resize', () => {
+        if (STATE.currentAnalysis) {
+          drawBoundingBoxes();
+        }
+      });
+
+      // Clique no Canvas para selecionar caixa
+      const canvas = document.getElementById('overlayCanvas');
+      canvas.addEventListener('click', handleCanvasClick);
+
+      // Sincronizar campo de texto do gabarito
+      const gabaritoTextArea = document.getElementById('gabaritoText');
+      gabaritoTextArea.addEventListener('input', (e) => {
+        STATE.gabaritoTexto = e.target.value;
+        updateModeBanner();
+      });
+    });
+
+    /* ==========================================================================
+       NAVEGAÇÃO DE ABAS
+       ========================================================================== */
+    function switchTab(tabName) {
+      STATE.activeTab = tabName;
+
+      // Esconder todas as abas
+      document.getElementById('tabCorrigir').classList.add('hidden');
+      document.getElementById('tabGabarito').classList.add('hidden');
+      document.getElementById('tabDiario').classList.add('hidden');
+
+      // Resetar botões
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('text-brand-500', 'border-brand-500');
+        btn.classList.add('text-slate-400', 'border-transparent');
+      });
+
+      // Mostrar aba selecionada
+      if (tabName === 'corrigir') {
+        document.getElementById('tabCorrigir').classList.remove('hidden');
+        const btn = document.getElementById('tabBtnCorrigir');
+        btn.classList.add('text-brand-500', 'border-brand-500');
+        btn.classList.remove('text-slate-400', 'border-transparent');
+      } else if (tabName === 'gabarito') {
+        document.getElementById('tabGabarito').classList.remove('hidden');
+        const btn = document.getElementById('tabBtnGabarito');
+        btn.classList.add('text-brand-500', 'border-brand-500');
+        btn.classList.remove('text-slate-400', 'border-transparent');
+      } else if (tabName === 'diario') {
+        document.getElementById('tabDiario').classList.remove('hidden');
+        const btn = document.getElementById('tabBtnDiario');
+        btn.classList.add('text-brand-500', 'border-brand-500');
+        btn.classList.remove('text-slate-400', 'border-transparent');
+        renderDiarioTable();
+      }
+    }
+
+    /* ==========================================================================
+       GESTÃO DA CHAVE DA API GEMINI
+       ========================================================================== */
+    function openApiKeyModal() {
+      document.getElementById('inputApiKey').value = STATE.apiKey;
+      document.getElementById('modalApiKey').classList.remove('hidden');
+    }
+
+    function closeApiKeyModal() {
+      document.getElementById('modalApiKey').classList.add('hidden');
+    }
+
+    function saveApiKey() {
+      const val = document.getElementById('inputApiKey').value.trim();
+      STATE.apiKey = val;
+      localStorage.setItem('gemini_api_key', val);
+      updateApiStatusUI();
+      closeApiKeyModal();
+      showToast('Chave da API Gemini salva com sucesso!', 'success');
+    }
+
+    function updateApiStatusUI() {
+      const dot = document.getElementById('apiStatusDot');
+      const text = document.getElementById('apiStatusText');
+      if (STATE.apiKey) {
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+        text.innerText = 'API Gemini OK';
+      } else {
+        dot.className = 'w-2 h-2 rounded-full bg-red-500';
+        text.innerText = 'Sem Chave API';
+      }
+    }
+
+    /* ==========================================================================
+       MODO DE CORREÇÃO (BANNER DE NORMAS)
+       ========================================================================== */
+    function updateModeBanner() {
+      const title = document.getElementById('modeTitle');
+      const desc = document.getElementById('modeDesc');
+      const icon = document.getElementById('modeIcon');
+
+      const hasGabaritoFile = !!STATE.gabaritoFile;
+      const hasGabaritoText = STATE.gabaritoTexto.trim().length > 0;
+
+      if (hasGabaritoFile || hasGabaritoText) {
+        title.innerText = 'Com Gabarito Anexado';
+        desc.innerText = 'A IA usará o seu material anexado como referência prioritária.';
+        icon.className = 'p-1 rounded-md bg-indigo-500/20 text-indigo-400';
+      } else {
+        title.innerText = 'Modo Autônomo Ativo (IA investiga sozinha)';
+        desc.innerText = 'Sem gabarito prévio: a IA resolve e avalia cada questão automaticamente.';
+        icon.className = 'p-1 rounded-md bg-emerald-500/20 text-emerald-400';
+      }
+    }
+
+    /* ==========================================================================
+       CÂMERA E CAPTURA EM TEMPO REAL
+       ========================================================================== */
+    async function startCamera() {
+      if (!STATE.apiKey) {
+        openApiKeyModal();
+        showToast('Configure sua chave da API Gemini para iniciar a leitura!', 'warning');
+        return;
+      }
+
+      try {
+        const video = document.getElementById('videoElement');
+        const staticImg = document.getElementById('staticImage');
+        const placeholder = document.getElementById('cameraPlaceholder');
+        const liveBadge = document.getElementById('liveStatusBadge');
+
+        // Solicitar câmera traseira (environment)
+        const constraints = {
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
         };
 
-        // ================= INICIALIZAÇÃO =================
-        window.onload = function () {
-            carregarDadosLocalStorage();
-            renderGabarito();
-            renderDiario();
-            switchTab('gabarito');
-            if (estado.customApiKey) {
-                document.getElementById('input-api-key').value = estado.customApiKey;
-            }
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        STATE.mediaStream = stream;
+        video.srcObject = stream;
+        video.classList.remove('hidden');
+        staticImg.classList.add('hidden');
+        placeholder.classList.add('hidden');
+        liveBadge.classList.remove('hidden');
+
+        STATE.isCameraActive = true;
+        STATE.isFrozen = false;
+        updateControlsUI();
+
+        // Aguardar o carregamento dos metadados para ajustar dimensões
+        video.onloadedmetadata = () => {
+          resizeOverlayCanvas();
+          startAutoScanLoop();
         };
 
-        function carregarDadosLocalStorage() {
-            try {
-                const gabSaved = localStorage.getItem('corretor_gabarito');
-                if (gabSaved) estado.gabarito = JSON.parse(gabSaved);
+        showToast('Câmera conectada com sucesso!', 'success');
+      } catch (err) {
+        console.error('Erro ao acessar câmera:', err);
+        showToast('Não foi possível acessar a câmera. Use a opção "Enviar Foto".', 'error');
+      }
+    }
 
-                const diaSaved = localStorage.getItem('corretor_diario');
-                if (diaSaved) estado.diario = JSON.parse(diaSaved);
-            } catch (e) {
-                console.error("Erro ao carregar do LocalStorage:", e);
+    function stopCamera() {
+      if (STATE.mediaStream) {
+        STATE.mediaStream.getTracks().forEach(track => track.stop());
+        STATE.mediaStream = null;
+      }
+      stopAutoScanLoop();
+      
+      const video = document.getElementById('videoElement');
+      video.classList.add('hidden');
+      document.getElementById('cameraPlaceholder').classList.remove('hidden');
+      document.getElementById('liveStatusBadge').classList.add('hidden');
+
+      STATE.isCameraActive = false;
+      updateControlsUI();
+    }
+
+    function toggleCamera() {
+      if (STATE.isCameraActive) {
+        stopCamera();
+      } else {
+        startCamera();
+      }
+    }
+
+    function toggleAutoScan(enabled) {
+      STATE.isAutoScan = enabled;
+      const dot = document.getElementById('scanStatusDot');
+      const text = document.getElementById('scanStatusText');
+
+      if (enabled) {
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse';
+        text.innerText = 'Leitura Ao Vivo Ativa';
+        if (STATE.isCameraActive && !STATE.isFrozen) {
+          startAutoScanLoop();
+        }
+      } else {
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500';
+        text.innerText = 'Leitura Automática Pausada';
+        stopAutoScanLoop();
+      }
+    }
+
+    function startAutoScanLoop() {
+      stopAutoScanLoop();
+      if (!STATE.isAutoScan || !STATE.isCameraActive || STATE.isFrozen) return;
+
+      // Executar a primeira análise após 500ms
+      STATE.autoScanIntervalTimer = setTimeout(async () => {
+        if (STATE.isAutoScan && STATE.isCameraActive && !STATE.isFrozen && !STATE.isScanning) {
+          await captureAndAnalyzeNow();
+        }
+        // Agendar o próximo ciclo (2.5s após a conclusão da requisição)
+        if (STATE.isAutoScan && STATE.isCameraActive && !STATE.isFrozen) {
+          startAutoScanLoop();
+        }
+      }, 2500);
+    }
+
+    function stopAutoScanLoop() {
+      if (STATE.autoScanIntervalTimer) {
+        clearTimeout(STATE.autoScanIntervalTimer);
+        STATE.autoScanIntervalTimer = null;
+      }
+    }
+
+    function toggleFreeze() {
+      if (!STATE.isCameraActive && !STATE.currentExamImageBase64) return;
+
+      STATE.isFrozen = !STATE.isFrozen;
+      const video = document.getElementById('videoElement');
+      const staticImg = document.getElementById('staticImage');
+      const btnText = document.getElementById('btnFreezeText');
+
+      if (STATE.isFrozen) {
+        // Congelar: capturar frame atual e exibir na imagem estática
+        const frameBase64 = captureVideoFrameBase64();
+        if (frameBase64) {
+          staticImg.src = frameBase64;
+          staticImg.classList.remove('hidden');
+          video.classList.add('hidden');
+        }
+        stopAutoScanLoop();
+        btnText.innerText = 'Descongelar (Ao Vivo)';
+        showToast('Vídeo congelado. Clique nos retângulos para revisar!', 'info');
+      } else {
+        // Descongelar: voltar ao vídeo ao vivo
+        staticImg.classList.add('hidden');
+        video.classList.remove('hidden');
+        btnText.innerText = 'Congelar & Revisar';
+        if (STATE.isAutoScan) {
+          startAutoScanLoop();
+        }
+      }
+    }
+
+    function updateControlsUI() {
+      const btnToggle = document.getElementById('btnToggleCameraText');
+      const btnFreeze = document.getElementById('btnFreeze');
+      const btnCapture = document.getElementById('btnCaptureNow');
+
+      if (STATE.isCameraActive) {
+        btnToggle.innerText = 'Desligar Câmera';
+        btnFreeze.disabled = false;
+        btnCapture.disabled = false;
+      } else {
+        btnToggle.innerText = 'Ligar Câmera';
+        btnFreeze.disabled = !STATE.currentExamImageBase64;
+        btnCapture.disabled = !STATE.currentExamImageBase64;
+      }
+    }
+
+    /* ==========================================================================
+       CAPTURAR QUADRO DA CÂMERA OU UPLOAD DE ARQUIVO DE PROVA
+       ========================================================================== */
+    function captureVideoFrameBase64() {
+      const video = document.getElementById('videoElement');
+      if (!video || video.videoWidth === 0) return null;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/jpeg', 0.85);
+    }
+
+    async function handleExamFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64Data = e.target.result;
+        STATE.currentExamImageBase64 = base64Data;
+
+        // Mostrar imagem estática
+        stopCamera();
+        const staticImg = document.getElementById('staticImage');
+        const placeholder = document.getElementById('cameraPlaceholder');
+        staticImg.src = base64Data;
+        staticImg.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+
+        STATE.isFrozen = true;
+        updateControlsUI();
+
+        // Enviar imediatamente para análise da IA
+        await analyzeFrameWithGemini(base64Data);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function captureAndAnalyzeNow() {
+      if (STATE.isScanning) return; // Evitar chamadas simultâneas
+
+      let frameBase64 = null;
+      if (STATE.isCameraActive && !STATE.isFrozen) {
+        frameBase64 = captureVideoFrameBase64();
+      } else if (STATE.currentExamImageBase64) {
+        frameBase64 = STATE.currentExamImageBase64;
+      }
+
+      if (!frameBase64) {
+        showToast('Ligue a câmera ou envie uma imagem primeiro!', 'warning');
+        return;
+      }
+
+      await analyzeFrameWithGemini(frameBase64);
+    }
+
+    /* ==========================================================================
+       INTEGRAÇÃO COM A API DO GEMINI (MULTIMODAL + BOUNDING BOXES)
+       ========================================================================== */
+    async function analyzeFrameWithGemini(examBase64) {
+      if (!STATE.apiKey) {
+        openApiKeyModal();
+        return;
+      }
+
+      STATE.isScanning = true;
+      showLoadingOverlay(true, 'IA investigando e corrigindo a prova...');
+
+      try {
+        const cleanExamBase64 = examBase64.split(',')[1] || examBase64;
+        const examMimeType = examBase64.substring(examBase64.indexOf(':') + 1, examBase64.indexOf(';')) || 'image/jpeg';
+
+        // Montar partes da requisição
+        const parts = [];
+
+        // 1. Se houver arquivo de Gabarito (PDF ou Imagem)
+        if (STATE.gabaritoFile) {
+          parts.push({
+            inlineData: {
+              mimeType: STATE.gabaritoFile.mimeType,
+              data: STATE.gabaritoFile.base64
             }
+          });
         }
 
-        function salvarLocalStorage() {
-            localStorage.setItem('corretor_gabarito', JSON.stringify(estado.gabarito));
-            localStorage.setItem('corretor_diario', JSON.stringify(estado.diario));
-        }
+        // 2. Prompt do Sistema / Instruções Pedagógicas
+        let promptText = `Você é um professor e corretor pedagógico experiente com visão computacional multimodal avançada.
+Sua tarefa é analisar a FOTO DA PROVA DO ALUNO fornecida a seguir.
 
-        // ================= NAVEGAÇÃO ENTRE ABAS =================
-        function switchTab(tabName) {
-            estado.abaAtiva = tabName;
-            document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
-            document.getElementById(`view-${tabName}`).classList.remove('hidden');
+INSTRUÇÕES DE CORREÇÃO:
+1. Identifique o Nome do Aluno no cabeçalho da folha se existir (se não conseguir ler, defina como 'Aluno não identificado').
+2. Para CADA QUESTÃO visível na folha de prova:
+   - Identifique o número ou letra da questão (ex: "1", "2a", "3").
+   - Leia a resposta ou opção assinalada pelo aluno e transcreva em 'transcricao'.
+   - Avalie e determine o status: 'correto' (totalmente certa), 'parcial' (meio certo / parcialmente correta) ou 'errado' (errada/incorreta).
+   ${STATE.gabaritoFile || STATE.gabaritoTexto.trim() ? '- USE O GABARITO DE REFERÊNCIA FORNECIDO como diretriz principal de correção e nota.' : '- COMO NÃO HÁ GABARITO ANEXADO, RESOLVA E INVESTIGUE CADA QUESTÃO VOCÊ MESMO com precisão matemática/científica e avalie a resposta do aluno.'}
+   ${STATE.gabaritoTexto.trim() ? `CRITÉRIOS ADICIONAIS DO PROFESSOR: "${STATE.gabaritoTexto.trim()}"` : ''}
+   - Atribua 'nota_obtida' e 'nota_maxima' razoáveis (ex: correto = 1.0/1.0, parcial = 0.5/1.0, errado = 0.0/1.0).
+   - Forneça uma justificativa pedagógica concisa em 'justificativa'.
+   - DELIMITAÇÃO VISUAL (box_2d): Forneça o retângulo delimitador [ymin, xmin, ymax, xmax] na escala de 0 a 1000 que envolve toda a área da questão (pergunta e resposta do aluno na folha).
 
-            // Estilização botões Desktop
-            document.querySelectorAll('.tab-btn-desktop').forEach(btn => {
-                btn.className = 'tab-btn-desktop px-4 py-2 text-sm font-medium rounded-lg transition-all text-slate-600 hover:bg-slate-200';
-            });
-            const btnDesk = document.getElementById(`tab-btn-desktop-${tabName}`);
-            if (btnDesk) btnDesk.className = 'tab-btn-desktop px-4 py-2 text-sm font-bold rounded-lg transition-all bg-white text-sky-600 shadow-sm';
+Retorne os resultados RIGOROSAMENTE dentro do esquema JSON solicitado.`;
 
-            // Estilização botões Mobile
-            document.querySelectorAll('.tab-btn-mobile').forEach(btn => {
-                btn.className = 'tab-btn-mobile flex flex-col items-center p-2 text-xs font-medium rounded-xl transition-all w-1/3 text-slate-500';
-            });
-            const btnMob = document.getElementById(`tab-btn-mobile-${tabName}`);
-            if (btnMob) btnMob.className = 'tab-btn-mobile flex flex-col items-center p-2 text-xs font-bold rounded-xl transition-all w-1/3 text-sky-600 bg-sky-50';
+        parts.push({ text: promptText });
 
-            // Desligar câmera se sair da aba
-            if (tabName !== 'corrigir' && estado.cameraStream) {
-                pararCamera();
-            }
-        }
+        // 3. Foto da Prova do Aluno
+        parts.push({
+          inlineData: {
+            mimeType: examMimeType,
+            data: cleanExamBase64
+          }
+        });
 
-
-        // ================= ABA 1: LÓGICA DO GABARITO =================
-        function renderGabarito() {
-            const container = document.getElementById('lista-questoes-gabarito');
-            const totalEl = document.getElementById('total-pontos-gabarito');
-            const countEl = document.getElementById('count-questoes');
-
-            container.innerHTML = '';
-            let total = 0;
-
-            if (estado.gabarito.length === 0) {
-                container.innerHTML = `
-                    <div class="p-8 text-center text-slate-400 text-xs">
-                        Nenhuma questão cadastrada. Clique em <strong>"Carregar Exemplo Misto"</strong> para preencher automaticamente.
-                    </div>`;
-            } else {
-                estado.gabarito.forEach((q, idx) => {
-                    total += parseFloat(q.valorMax);
-                    const item = document.createElement('div');
-                    item.className = 'px-5 py-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors';
-                    item.innerHTML = `
-                        <div class="flex items-center space-x-3">
-                            <span class="px-2.5 py-1 bg-slate-100 text-slate-800 font-bold text-xs rounded-lg">${q.id}</span>
-                            <div>
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-sm font-semibold text-slate-900">${q.tipo}</span>
-                                    <span class="text-xs px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 font-medium">${parseFloat(q.valorMax).toFixed(1)} pts</span>
-                                </div>
-                                <p class="text-xs text-slate-500 mt-0.5 line-clamp-1">Critério: ${q.criterio}</p>
-                            </div>
-                        </div>
-                        <button onclick="removerQuestao(${idx})" class="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition-colors">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                        </button>
-                    `;
-                    container.appendChild(item);
-                });
-            }
-
-            totalEl.innerText = `${total.toFixed(1)} pts`;
-            countEl.innerText = estado.gabarito.length;
-        }
-
-        function adicionarQuestao(e) {
-            e.preventDefault();
-            const id = document.getElementById('q-id').value.trim();
-            const tipo = document.getElementById('q-tipo').value;
-            const valorMax = parseFloat(document.getElementById('q-valor').value);
-            const criterio = document.getElementById('q-criterio').value.trim();
-
-            if (!id || isNaN(valorMax) || !criterio) return;
-
-            estado.gabarito.push({ id, tipo, valorMax, criterio });
-            salvarLocalStorage();
-            renderGabarito();
-
-            // Limpar formulário
-            document.getElementById('q-id').value = `Q${estado.gabarito.length + 1}`;
-            document.getElementById('q-criterio').value = '';
-        }
-
-        function removerQuestao(idx) {
-            estado.gabarito.splice(idx, 1);
-            salvarLocalStorage();
-            renderGabarito();
-        }
-
-        function limparGabarito() {
-            if (confirm("Deseja realmente apagar todas as questões do gabarito?")) {
-                estado.gabarito = [];
-                salvarLocalStorage();
-                renderGabarito();
-            }
-        }
-
-        function carregarGabaritoExemplo() {
-            estado.gabarito = [
-                { id: "Q1", tipo: "Objetiva", valorMax: 2.0, criterio: "Alternativa C (Fórmula da aceleração a = Δv/Δt)." },
-                { id: "Q2", tipo: "Cálculo", valorMax: 4.0, criterio: "Cálculo da Força Resultante (F = m.a). Passo 1: isolar a aceleração; Passo 2: converter massa para kg; Resposta esperada: a = 4.5 m/s²." },
-                { id: "Q3", tipo: "Discursiva", valorMax: 4.0, criterio: "Diferença entre Calor e Temperatura. Esperado: Calor é energia térmica em trânsito; Temperatura é a medida da agitação molecular." }
-            ];
-            salvarLocalStorage();
-            renderGabarito();
-        }
-
-
-        // ================= ABA 2: CÂMERA & CORREÇÃO COM GEMINI =================
-        async function iniciarCamera() {
-            const videoEl = document.getElementById('video-stream');
-            const cameraContainer = document.getElementById('camera-container');
-
-            try {
-                if (estado.cameraStream) {
-                    pararCamera();
+        // Payload da API com JSON Schema estruturado
+        const payload = {
+          contents: [{ parts: parts }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: {
+                aluno: { type: "STRING" },
+                questoes: {
+                  type: "ARRAY",
+                  items: {
+                    type: "OBJECT",
+                    properties: {
+                      numero: { type: "STRING" },
+                      status: { type: "STRING", enum: ["correto", "parcial", "errado"] },
+                      nota_obtida: { type: "NUMBER" },
+                      nota_maxima: { type: "NUMBER" },
+                      transcricao: { type: "STRING" },
+                      justificativa: { type: "STRING" },
+                      box_2d: {
+                        type: "ARRAY",
+                        items: { type: "NUMBER" },
+                        description: "[ymin, xmin, ymax, xmax] escala 0-1000"
+                      }
+                    },
+                    required: ["numero", "status", "nota_obtida", "nota_maxima", "transcricao", "justificativa", "box_2d"]
+                  }
                 }
-
-                estado.cameraStream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 960 } },
-                    audio: false
-                });
-                videoEl.srcObject = estado.cameraStream;
-                cameraContainer.classList.remove('hidden');
-                document.getElementById('btn-iniciar-camera').innerText = '🛑 Desligar Câmera';
-                document.getElementById('btn-iniciar-camera').onclick = pararCamera;
-            } catch (err) {
-                alert("Não foi possível acessar a câmera do dispositivo. Verifique as permissões ou envie uma foto da galeria.");
-                console.error("Erro câmera:", err);
+              },
+              required: ["aluno", "questoes"]
             }
+          }
+        };
+
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${STATE.apiKey}`;
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error?.message || `Erro ${response.status} na API Gemini`);
         }
 
-        function pararCamera() {
-            if (estado.cameraStream) {
-                estado.cameraStream.getTracks().forEach(track => track.stop());
-                estado.cameraStream = null;
-            }
-            document.getElementById('camera-container').classList.add('hidden');
-            const btn = document.getElementById('btn-iniciar-camera');
-            btn.innerText = '📷 Ligar Câmera Traseira';
-            btn.onclick = iniciarCamera;
+        const result = await response.json();
+        const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!jsonText) {
+          throw new Error("Resposta inválida recebida da API.");
         }
 
-        function capturarFoto() {
-            const videoEl = document.getElementById('video-stream');
-            const canvas = document.createElement('canvas');
-            canvas.width = videoEl.videoWidth || 1280;
-            canvas.height = videoEl.videoHeight || 960;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+        const parsedData = JSON.parse(jsonText);
 
-            const base64Image = canvas.toDataURL('image/jpeg', 0.85);
-            pararCamera();
-            processarImagemComGemini(base64Image);
+        // Adicionar IDs internos únicos para edição rápida
+        parsedData.questoes = parsedData.questoes.map((q, index) => ({
+          ...q,
+          id: 'q_' + Date.now() + '_' + index
+        }));
+
+        STATE.currentAnalysis = parsedData;
+        STATE.currentExamImageBase64 = examBase64;
+
+        // Atualizar Nome do Aluno e Nota Total na Interface
+        document.getElementById('inputAlunoName').value = parsedData.aluno || 'Aluno não identificado';
+        updateTotalScoreUI();
+
+        // Exibir Barra Inferior de Fechamento
+        document.getElementById('footerFinalizeBar').classList.remove('hidden');
+
+        // Desenhar os Retângulos Coloridos (Bounding Boxes) no Canvas
+        drawBoundingBoxes();
+
+        showToast(`Leitura concluída! ${parsedData.questoes.length} questão(ões) avaliada(s).`, 'success');
+
+      } catch (err) {
+        console.error('Erro na análise da prova:', err);
+        showToast(`Erro na correção: ${err.message}`, 'error');
+      } finally {
+        STATE.isScanning = false;
+        showLoadingOverlay(false);
+      }
+    }
+
+    /* ==========================================================================
+       DESENHO DE BOUNDING BOXES COM ALINHAMENTO PRECISO
+       ========================================================================== */
+    function resizeOverlayCanvas() {
+      const canvas = document.getElementById('overlayCanvas');
+      const container = canvas.parentElement;
+      const video = document.getElementById('videoElement');
+      const staticImg = document.getElementById('staticImage');
+
+      // Determinar o elemento ativo para pegar as dimensões reais de exibição
+      const activeEl = (!staticImg.classList.contains('hidden')) ? staticImg : video;
+
+      if (activeEl && activeEl.clientWidth > 0 && activeEl.clientHeight > 0) {
+        canvas.width = activeEl.clientWidth;
+        canvas.height = activeEl.clientHeight;
+        canvas.style.width = activeEl.clientWidth + 'px';
+        canvas.style.height = activeEl.clientHeight + 'px';
+      } else {
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+      }
+    }
+
+    function drawBoundingBoxes() {
+      resizeOverlayCanvas();
+      const canvas = document.getElementById('overlayCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (!STATE.currentAnalysis || !STATE.currentAnalysis.questoes) return;
+
+      const w = canvas.width;
+      const h = canvas.height;
+
+      STATE.currentAnalysis.questoes.forEach(q => {
+        if (!q.box_2d || q.box_2d.length < 4) return;
+
+        // Coordenadas normalizadas 0-1000
+        const [ymin, xmin, ymax, xmax] = q.box_2d;
+
+        const x = (xmin / 1000) * w;
+        const y = (ymin / 1000) * h;
+        const boxWidth = ((xmax - xmin) / 1000) * w;
+        const boxHeight = ((ymax - ymin) / 1000) * h;
+
+        // Definir cores de acordo com o status
+        let strokeColor = '#10b981'; // Verde (Correto)
+        let fillColor = 'rgba(16, 185, 129, 0.15)';
+        let statusBadgeText = `Q${q.numero} • ✅ Correto (${q.nota_obtida} pt)`;
+
+        if (q.status === 'parcial') {
+          strokeColor = '#eab308'; // Amarelo (Parcial)
+          fillColor = 'rgba(234, 179, 8, 0.15)';
+          statusBadgeText = `Q${q.numero} • ⚠️ Parcial (${q.nota_obtida} pt)`;
+        } else if (q.status === 'errado') {
+          strokeColor = '#ef4444'; // Vermelho (Errado)
+          fillColor = 'rgba(239, 68, 68, 0.15)';
+          statusBadgeText = `Q${q.numero} • ❌ Errado (${q.nota_obtida} pt)`;
         }
 
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+        // Desenhar Retângulo
+        ctx.fillStyle = fillColor;
+        ctx.fillRect(x, y, boxWidth, boxHeight);
 
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                processarImagemComGemini(e.target.result);
-            };
-            reader.readAsDataURL(file);
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(x, y, boxWidth, boxHeight);
+
+        // Desenhar Etiqueta (Badge) no Canto Superior Esquerdo da Caixa
+        ctx.font = 'bold 11px sans-serif';
+        const textWidth = ctx.measureText(statusBadgeText).width;
+        const badgeHeight = 20;
+
+        ctx.fillStyle = strokeColor;
+        ctx.beginPath();
+        ctx.roundRect(x, Math.max(0, y - badgeHeight), textWidth + 12, badgeHeight, 4);
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(statusBadgeText, x + 6, Math.max(13, y - 5));
+      });
+    }
+
+    function handleCanvasClick(event) {
+      if (!STATE.currentAnalysis || !STATE.currentAnalysis.questoes) return;
+
+      const canvas = document.getElementById('overlayCanvas');
+      const rect = canvas.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const clickY = event.clientY - rect.top;
+
+      const w = canvas.width;
+      const h = canvas.height;
+
+      // Verificar qual bounding box foi tocada
+      const clickedQuestao = STATE.currentAnalysis.questoes.find(q => {
+        if (!q.box_2d || q.box_2d.length < 4) return false;
+        const [ymin, xmin, ymax, xmax] = q.box_2d;
+
+        const x = (xmin / 1000) * w;
+        const y = (ymin / 1000) * h;
+        const boxW = ((xmax - xmin) / 1000) * w;
+        const boxH = ((ymax - ymin) / 1000) * h;
+
+        return clickX >= x && clickX <= (x + boxW) && clickY >= y && clickY <= (y + boxH);
+      });
+
+      if (clickedQuestao) {
+        // Se clicar no ao vivo, congelar automaticamente para revisão tranquila
+        if (STATE.isCameraActive && !STATE.isFrozen) {
+          toggleFreeze();
         }
-
-        async function processarImagemComGemini(imageDataUrl) {
-            if (estado.gabarito.length === 0) {
-                alert("Por favor, cadastre primeiro o Gabarito na Aba 1 antes de corrigir!");
-                switchTab('gabarito');
-                return;
-            }
-
-            // Exibir carregador
-            document.getElementById('camera-section').classList.add('hidden');
-            document.getElementById('ai-loading').classList.remove('hidden');
-            document.getElementById('resultado-correcao').classList.add('hidden');
-
-            const base64Data = imageDataUrl.split(',')[1];
-
-            // Montar prompt detalhado para a IA
-            const promptTexto = `
-Você é um corretor de provas especializado. Analise a imagem da folha de resposta anexada com base rigorosamente no seguinte Gabarito Oficial:
-${JSON.stringify(estado.gabarito, null, 2)}
-
-Instruções para avaliação:
-1. Identifique no cabeçalho o Nome do Aluno. Se não conseguir ler com clareza, retorne "Aluno não identificado".
-2. Para CADA questão do gabarito, localize visualmente onde o aluno respondeu na folha de papel.
-3. Avalie se a resposta está "correto", "parcial" ou "errado", atribuindo a nota proporcional de 0 até o valorMax.
-4. Forneça uma transcrição curta do que o aluno escreveu/marcou.
-5. Forneça uma breve justificativa pedagógica da correção.
-6. Forneça as coordenadas aproximadas da bounding box da resposta no papel no formato normalizado box_2d: [ymin, xmin, ymax, xmax] em escala de 0 a 1000.
-`;
-
-            const payload = {
-                contents: [
-                    {
-                        role: "user",
-                        parts: [
-                            { text: promptTexto },
-                            {
-                                inlineData: {
-                                    mimeType: "image/jpeg",
-                                    data: base64Data
-                                }
-                            }
-                        ]
-                    }
-                ],
-                generationConfig: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: "OBJECT",
-                        properties: {
-                            nomeAluno: { type: "STRING" },
-                            correcoes: {
-                                type: "ARRAY",
-                                items: {
-                                    type: "OBJECT",
-                                    properties: {
-                                        idQuestao: { type: "STRING" },
-                                        status: { type: "STRING", enum: ["correto", "parcial", "errado"] },
-                                        nota: { type: "NUMBER" },
-                                        transcricao: { type: "STRING" },
-                                        justificativa: { type: "STRING" },
-                                        box_2d: {
-                                            type: "ARRAY",
-                                            items: { type: "INTEGER" },
-                                            description: "[ymin, xmin, ymax, xmax] normalizado 0 a 1000"
-                                        }
-                                    },
-                                    required: ["idQuestao", "status", "nota", "transcricao", "justificativa", "box_2d"]
-                                }
-                            }
-                        },
-                        required: ["nomeAluno", "correcoes"]
-                    }
-                }
-            };
-
-            const apiKey = estado.customApiKey || "";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
-            try {
-                let response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Erro na API Gemini (${response.status})`);
-                }
-
-                const result = await response.json();
-                const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-
-                if (!jsonText) throw new Error("Resposta inválida recebida da IA.");
-
-                const resultadoIA = JSON.parse(jsonText);
-
-                // Mapear resultado para a estrutura da aplicação
-                let notaTotalCalculada = 0;
-                let notaMaxTotal = 0;
-
-                const correcoesFormatadas = estado.gabarito.map(qGab => {
-                    const aval = resultadoIA.correcoes.find(c => c.idQuestao === qGab.id) || {
-                        idQuestao: qGab.id,
-                        status: "errado",
-                        nota: 0,
-                        transcricao: "Não identificada",
-                        justificativa: "Resposta não localizada na folha.",
-                        box_2d: [100, 100, 200, 900]
-                    };
-
-                    const notaReal = Math.min(Math.max(0, aval.nota), qGab.valorMax);
-                    notaTotalCalculada += notaReal;
-                    notaMaxTotal += qGab.valorMax;
-
-                    return {
-                        idQuestao: qGab.id,
-                        valorMax: qGab.valorMax,
-                        status: aval.status,
-                        nota: notaReal,
-                        transcricao: aval.transcricao,
-                        justificativa: aval.justificativa,
-                        box_2d: aval.box_2d && aval.box_2d.length === 4 ? aval.box_2d : [100, 100, 300, 900]
-                    };
-                });
-
-                estado.correcaoAtual = {
-                    fotoUrl: imageDataUrl,
-                    nomeAluno: resultadoIA.nomeAluno || "Aluno não identificado",
-                    notaTotal: notaTotalCalculada,
-                    notaMaxima: notaMaxTotal,
-                    correcoes: correcoesFormatadas
-                };
-
-                exibirResultadoCorrecao();
-
-            } catch (error) {
-                console.error("Erro na chamada do Gemini:", error);
-                alert("Falha na avaliação inteligente pela IA: " + error.message + ". Tente novamente ou verifique sua API Key.");
-                document.getElementById('camera-section').classList.remove('hidden');
-            } finally {
-                document.getElementById('ai-loading').classList.add('hidden');
-            }
-        }
-
-        function exibirResultadoCorrecao() {
-            document.getElementById('camera-section').classList.add('hidden');
-            document.getElementById('resultado-correcao').classList.remove('hidden');
-
-            const data = estado.correcaoAtual;
-            document.getElementById('aluno-nome-input').value = data.nomeAluno;
-            document.getElementById('prova-img-preview').src = data.fotoUrl;
-
-            recalcularNotaAtual();
-            renderBoundingBoxes();
-            renderListaCorrecoesDetalhada();
-        }
-
-        function recalcularNotaAtual() {
-            if (!estado.correcaoAtual) return;
-            let total = 0;
-            let max = 0;
-            estado.correcaoAtual.correcoes.forEach(c => {
-                total += parseFloat(c.nota);
-                max += parseFloat(c.valorMax);
-            });
-            estado.correcaoAtual.notaTotal = total;
-            estado.correcaoAtual.notaMaxima = max;
-
-            document.getElementById('nota-total-calculada').innerText = total.toFixed(1);
-            document.getElementById('nota-maxima-total').innerText = `/ ${max.toFixed(1)}`;
-        }
-
-        function renderBoundingBoxes() {
-            const container = document.getElementById('bounding-boxes-layer');
-            container.innerHTML = '';
-
-            const correcoes = estado.correcaoAtual.correcoes;
-
-            correcoes.forEach((c, idx) => {
-                const [ymin, xmin, ymax, xmax] = c.box_2d;
-
-                // Converte para porcentagem em tela (0 a 100%)
-                const top = (ymin / 10).toFixed(2);
-                const left = (xmin / 10).toFixed(2);
-                const width = ((xmax - xmin) / 10).toFixed(2);
-                const height = ((ymax - ymin) / 10).toFixed(2);
-
-                let colorBorder = '#22c55e'; // Verde
-                let colorBg = 'rgba(34, 197, 94, 0.15)';
-                let colorBadge = 'bg-emerald-600';
-
-                if (c.status === 'parcial') {
-                    colorBorder = '#f59e0b'; // Amarelo/Amber
-                    colorBg = 'rgba(245, 158, 11, 0.15)';
-                    colorBadge = 'bg-amber-600';
-                } else if (c.status === 'errado') {
-                    colorBorder = '#ef4444'; // Vermelho
-                    colorBg = 'rgba(239, 68, 68, 0.15)';
-                    colorBadge = 'bg-rose-600';
-                }
-
-                const box = document.createElement('div');
-                box.className = 'bounding-box';
-                box.style.top = `${top}%`;
-                box.style.left = `${left}%`;
-                box.style.width = `${width}%`;
-                box.style.height = `${height}%`;
-                box.style.borderColor = colorBorder;
-                box.style.backgroundColor = colorBg;
-
-                box.onclick = () => abrirModalEdicaoQuestao(idx);
-
-                box.innerHTML = `
-                    <span class="${colorBadge} text-white font-bold text-[10px] px-1.5 py-0.5 rounded shadow">
-                        ${c.idQuestao} • ${c.nota.toFixed(1)}pt
-                    </span>
-                `;
-
-                container.appendChild(box);
-            });
-        }
-
-        function renderListaCorrecoesDetalhada() {
-            const container = document.getElementById('lista-correcoes-detalhada');
-            container.innerHTML = '';
-
-            estado.correcaoAtual.correcoes.forEach((c, idx) => {
-                let statusBadge = `<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">✅ Correto</span>`;
-                if (c.status === 'parcial') {
-                    statusBadge = `<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">⚠️ Parcial</span>`;
-                } else if (c.status === 'errado') {
-                    statusBadge = `<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800">❌ Errado</span>`;
-                }
-
-                const card = document.createElement('div');
-                card.className = 'p-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100/80 transition-colors flex flex-col md:flex-row justify-between items-start md:items-center gap-3 cursor-pointer';
-                card.onclick = () => abrirModalEdicaoQuestao(idx);
-
-                card.innerHTML = `
-                    <div class="space-y-1 flex-1">
-                        <div class="flex items-center space-x-2">
-                            <span class="font-bold text-slate-900">${c.idQuestao}</span>
-                            ${statusBadge}
-                            <span class="text-xs text-slate-500 font-medium">(${c.nota.toFixed(1)} / ${c.valorMax.toFixed(1)} pts)</span>
-                        </div>
-                        <p class="text-xs text-slate-700 italic">"Transcrição: ${c.transcricao}"</p>
-                        <p class="text-xs text-slate-500">Justificativa: ${c.justificativa}</p>
-                    </div>
-                    <button class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 font-semibold text-xs rounded-lg hover:bg-slate-50 shadow-sm">
-                        ✏️ Ajustar
-                    </button>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-
-        // ================= MODAL DE EDIÇÃO DA QUESTÃO =================
-        function abrirModalEdicaoQuestao(idx) {
-            estado.questaoEmEdicaoIndex = idx;
-            const c = estado.correcaoAtual.correcoes[idx];
-
-            document.getElementById('modal-q-badge').innerText = c.idQuestao;
-            document.getElementById('modal-nota-max').innerText = parseFloat(c.valorMax).toFixed(1);
-            document.getElementById('modal-nota-input').value = c.nota;
-            document.getElementById('modal-nota-input').max = c.valorMax;
-            document.getElementById('modal-transcricao').innerText = `"${c.transcricao}"`;
-            document.getElementById('modal-justificativa').innerText = c.justificativa;
-
-            setModalStatus(c.status);
-
-            document.getElementById('modal-edicao-questao').classList.remove('hidden');
-        }
-
-        function setModalStatus(status) {
-            const btnC = document.getElementById('btn-status-correto');
-            const btnP = document.getElementById('btn-status-parcial');
-            const btnE = document.getElementById('btn-status-errado');
-            const notaInput = document.getElementById('modal-nota-input');
-            const idx = estado.questaoEmEdicaoIndex;
-            const q = estado.correcaoAtual.correcoes[idx];
-
-            btnC.className = 'py-2 text-xs font-bold rounded-xl border transition-all flex items-center justify-center space-x-1 bg-white border-slate-300 text-slate-600';
-            btnP.className = 'py-2 text-xs font-bold rounded-xl border transition-all flex items-center justify-center space-x-1 bg-white border-slate-300 text-slate-600';
-            btnE.className = 'py-2 text-xs font-bold rounded-xl border transition-all flex items-center justify-center space-x-1 bg-white border-slate-300 text-slate-600';
-
-            if (status === 'correto') {
-                btnC.className = 'py-2 text-xs font-bold rounded-xl border transition-all flex items-center justify-center space-x-1 bg-emerald-600 text-white border-emerald-600 shadow';
-                notaInput.value = q.valorMax;
-            } else if (status === 'parcial') {
-                btnP.className = 'py-2 text-xs font-bold rounded-xl border transition-all flex items-center justify-center space-x-1 bg-amber-500 text-white border-amber-500 shadow';
-                notaInput.value = (q.valorMax / 2).toFixed(1);
-            } else if (status === 'errado') {
-                btnE.className = 'py-2 text-xs font-bold rounded-xl border transition-all flex items-center justify-center space-x-1 bg-rose-600 text-white border-rose-600 shadow';
-                notaInput.value = 0;
-            }
-
-            btnC.setAttribute('data-selected', status === 'correto');
-            btnP.setAttribute('data-selected', status === 'parcial');
-            btnE.setAttribute('data-selected', status === 'errado');
-        }
-
-        function fecharModalEdicao() {
-            document.getElementById('modal-edicao-questao').classList.add('hidden');
-        }
-
-        function salvarModalEdicao() {
-            const idx = estado.questaoEmEdicaoIndex;
-            if (idx === null) return;
-
-            const novaNota = parseFloat(document.getElementById('modal-nota-input').value) || 0;
-            let status = 'errado';
-
-            if (document.getElementById('btn-status-correto').getAttribute('data-selected') === 'true') status = 'correto';
-            else if (document.getElementById('btn-status-parcial').getAttribute('data-selected') === 'true') status = 'parcial';
-
-            estado.correcaoAtual.correcoes[idx].nota = Math.min(Math.max(0, novaNota), estado.correcaoAtual.correcoes[idx].valorMax);
-            estado.correcaoAtual.correcoes[idx].status = status;
-
-            recalcularNotaAtual();
-            renderBoundingBoxes();
-            renderListaCorrecoesDetalhada();
-            fecharModalEdicao();
-        }
-
-        function salvarNoDiario() {
-            if (!estado.correcaoAtual) return;
-
-            const nomeInput = document.getElementById('aluno-nome-input').value.trim();
-            const nomeAluno = nomeInput || "Aluno Sem Nome";
-
-            const notaObtida = estado.correcaoAtual.notaTotal;
-            const notaMaxima = estado.correcaoAtual.notaMaxima;
-            const percentual = notaMaxima > 0 ? (notaObtida / notaMaxima) * 100 : 0;
-
-            const novoRegistro = {
-                id: Date.now().toString(),
-                nomeAluno: nomeAluno,
-                data: new Date().toLocaleString('pt-BR'),
-                notaObtida: parseFloat(notaObtida.toFixed(2)),
-                notaMaxima: parseFloat(notaMaxima.toFixed(2)),
-                percentual: parseFloat(percentual.toFixed(1))
-            };
-
-            estado.diario.push(novoRegistro);
-            salvarLocalStorage();
-            renderDiario();
-
-            alert(`✅ Prova de "${nomeAluno}" salva com sucesso no Diário de Notas!`);
-            switchTab('diario');
-        }
-
-
-        // ================= ABA 3: DIÁRIO DE NOTAS E ESTATÍSTICAS =================
-        function renderDiario() {
-            const tbody = document.getElementById('tabela-diario-body');
-            tbody.innerHTML = '';
-
-            if (estado.diario.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="5" class="px-5 py-8 text-center text-slate-400 text-xs">
-                            Nenhuma prova registrada no diário. Clique em <strong>"Simular Turma (6 Alunos)"</strong> para testar imediatamente.
-                        </td>
-                    </tr>`;
-            } else {
-                estado.diario.forEach((reg, idx) => {
-                    const tr = document.createElement('tr');
-                    tr.className = 'hover:bg-slate-50 transition-colors';
-                    tr.innerHTML = `
-                        <td class="px-5 py-3.5 font-bold text-slate-900">${reg.nomeAluno}</td>
-                        <td class="px-5 py-3.5 text-xs text-slate-500">${reg.data}</td>
-                        <td class="px-5 py-3.5 font-bold text-sky-600">${reg.notaObtida.toFixed(1)} <span class="text-xs font-normal text-slate-400">/ ${reg.notaMaxima.toFixed(1)}</span></td>
-                        <td class="px-5 py-3.5">
-                            <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${reg.percentual >= 70 ? 'bg-emerald-100 text-emerald-800' : reg.percentual >= 50 ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'}">
-                                ${reg.percentual.toFixed(1)}%
-                            </span>
-                        </td>
-                        <td class="px-5 py-3.5 text-right">
-                            <button onclick="removerRegistroDiario(${idx})" class="p-1 text-slate-400 hover:text-red-600 transition-colors">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            }
-
-            atualizarEstatísticas();
-        }
-
-        // --- CÁLCULOS ESTATÍSTICOS EMBUTIDOS ---
-        function atualizarEstatísticas() {
-            const notas = estado.diario.map(d => d.notaObtida);
-            const N = notas.length;
-
-            const elTotal = document.getElementById('stat-total');
-            const elMedia = document.getElementById('stat-media');
-            const elMediana = document.getElementById('stat-mediana');
-            const elModa = document.getElementById('stat-moda');
-            const elDesvio = document.getElementById('stat-desvio');
-
-            elTotal.innerText = N;
-
-            if (N === 0) {
-                elMedia.innerText = '0.00';
-                elMediana.innerText = '0.00';
-                elModa.innerText = 'Amodal';
-                elDesvio.innerText = '0.00';
-                return;
-            }
-
-            // 1. Média Aritmética
-            const soma = notas.reduce((acc, val) => acc + val, 0);
-            const media = soma / N;
-            elMedia.innerText = media.toFixed(2);
-
-            // 2. Mediana
-            const ordenadas = [...notas].sort((a, b) => a - b);
-            let mediana = 0;
-            const meio = Math.floor(N / 2);
-
-            if (N % 2 !== 0) {
-                mediana = ordenadas[meio];
-            } else {
-                mediana = (ordenadas[meio - 1] + ordenadas[meio]) / 2;
-            }
-            elMediana.innerText = mediana.toFixed(2);
-
-            // 3. Moda
-            const freq = {};
-            notas.forEach(n => {
-                const chave = n.toFixed(1);
-                freq[chave] = (freq[chave] || 0) + 1;
-            });
-
-            let maxFreq = 0;
-            for (let k in freq) {
-                if (freq[k] > maxFreq) maxFreq = freq[k];
-            }
-
-            const modas = [];
-            for (let k in freq) {
-                if (freq[k] === maxFreq && maxFreq > 1) {
-                    modas.push(k);
-                }
-            }
-
-            if (modas.length === 0 || modas.length === Object.keys(freq).length) {
-                elModa.innerText = 'Amodal';
-            } else {
-                elModa.innerText = modas.join(', ');
-            }
-
-            // 4. Desvio Padrão Populacional (σ = sqrt(sum((x - media)^2) / N))
-            const variancia = notas.reduce((acc, val) => acc + Math.pow(val - media, 2), 0) / N;
-            const desvioPadraoPop = Math.sqrt(variancia);
-            elDesvio.innerText = desvioPadraoPop.toFixed(2);
-        }
-
-        function removerRegistroDiario(idx) {
-            estado.diario.splice(idx, 1);
-            salvarLocalStorage();
-            renderDiario();
-        }
-
-        function limparDiario() {
-            if (confirm("Deseja realmente apagar todos os registros do diário?")) {
-                estado.diario = [];
-                salvarLocalStorage();
-                renderDiario();
-            }
-        }
-
-        function simularTurmaExemplo() {
-            const dataHoje = new Date().toLocaleString('pt-BR');
-            estado.diario = [
-                { id: '1', nomeAluno: 'Ana Silva', data: dataHoje, notaObtida: 9.5, notaMaxima: 10.0, percentual: 95.0 },
-                { id: '2', nomeAluno: 'Bruno Costa', data: dataHoje, notaObtida: 7.0, notaMaxima: 10.0, percentual: 70.0 },
-                { id: '3', nomeAluno: 'Carla Souza', data: dataHoje, notaObtida: 8.5, notaMaxima: 10.0, percentual: 85.0 },
-                { id: '4', nomeAluno: 'Diego Oliveira', data: dataHoje, notaObtida: 4.0, notaMaxima: 10.0, percentual: 40.0 },
-                { id: '5', nomeAluno: 'Elena Santos', data: dataHoje, notaObtida: 8.5, notaMaxima: 10.0, percentual: 85.0 },
-                { id: '6', nomeAluno: 'Fernando Lima', data: dataHoje, notaObtida: 6.5, notaMaxima: 10.0, percentual: 65.0 }
-            ];
-            salvarLocalStorage();
-            renderDiario();
-        }
-
-        // --- EXPORTAÇÃO CSV PARA EXCEL (pt-BR) ---
-        function exportarCSV() {
-            if (estado.diario.length === 0) {
-                alert("Não há dados no diário para exportar.");
-                return;
-            }
-
-            const notas = estado.diario.map(d => d.notaObtida);
-            const N = notas.length;
-            const soma = notas.reduce((acc, val) => acc + val, 0);
-            const media = soma / N;
-
-            const ordenadas = [...notas].sort((a, b) => a - b);
-            const meio = Math.floor(N / 2);
-            const mediana = N % 2 !== 0 ? ordenadas[meio] : (ordenadas[meio - 1] + ordenadas[meio]) / 2;
-
-            const freq = {};
-            notas.forEach(n => {
-                const k = n.toFixed(1);
-                freq[k] = (freq[k] || 0) + 1;
-            });
-            let maxFreq = 0;
-            for (let k in freq) if (freq[k] > maxFreq) maxFreq = freq[k];
-            const modas = [];
-            for (let k in freq) if (freq[k] === maxFreq && maxFreq > 1) modas.push(k);
-            const strModa = (modas.length === 0 || modas.length === Object.keys(freq).length) ? 'Amodal' : modas.join(', ');
-
-            const variancia = notas.reduce((acc, val) => acc + Math.pow(val - media, 2), 0) / N;
-            const desvioPadrao = Math.sqrt(variancia);
-
-            // Montar string CSV no padrão Excel pt-BR (Ponto e Vírgula ;)
-            let csvContent = "\uFEFF"; // BOM UTF-8
-            csvContent += "Nome do Aluno;Data e Hora;Nota Obtida;Nota Máxima;Aproveitamento (%)\n";
-
-            estado.diario.forEach(reg => {
-                csvContent += `"${reg.nomeAluno}";"${reg.data}";${reg.notaObtida.toFixed(2).replace('.', ',')};${reg.notaMaxima.toFixed(2).replace('.', ',')};${reg.percentual.toFixed(1).replace('.', ',')}\n`;
-            });
-
-            csvContent += "\n";
-            csvContent += "--- RESUMO ESTATÍSTICO DA TURMA ---\n";
-            csvContent += `Total de Provas Corrigidas (N);${N}\n`;
-            csvContent += `Média Aritmética;${media.toFixed(2).replace('.', ',')}\n`;
-            csvContent += `Mediana;${mediana.toFixed(2).replace('.', ',')}\n`;
-            csvContent += `Moda;${strModa.replace('.', ',')}\n`;
-            csvContent += `Desvio Padrão Populacional (σ);${desvioPadrao.toFixed(2).replace('.', ',')}\n`;
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.setAttribute("href", url);
-            link.setAttribute("download", `diario_notas_turma_${new Date().toISOString().slice(0, 10)}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        // ================= CONFIGURAÇÕES E MODAIS =================
-        function toggleConfigModal(show) {
-            document.getElementById('modal-config').classList.toggle('hidden', !show);
-        }
-
-        function salvarConfigApiKey() {
-            const key = document.getElementById('input-api-key').value.trim();
-            estado.customApiKey = key;
-            localStorage.setItem('corretor_api_key', key);
-            toggleConfigModal(false);
-            alert("Chave de API salva com sucesso!");
-        }
-    </script>
+        openModalReview(clickedQuestao.id);
+      }
+    }
+
+    /* ==========================================================================
+       PAINEL DE REVISÃO E EDIÇÃO MANUAL DA QUESTÃO (MODAL)
+       ========================================================================== */
+    function openModalReview(questaoId) {
+      const q = STATE.currentAnalysis.questoes.find(item => item.id === questaoId);
+      if (!q) return;
+
+      STATE.selectedQuestaoId = questaoId;
+
+      document.getElementById('modalQuestaoBadge').innerText = `Questão ${q.numero}`;
+      document.getElementById('modalTranscricao').innerText = `"${q.transcricao || 'Nenhuma transcrição disponível'}"`;
+      document.getElementById('modalJustificativa').innerText = q.justificativa || 'Sem justificativa fornecida.';
+
+      document.getElementById('modalInputNotaObtida').value = q.nota_obtida;
+      document.getElementById('modalInputNotaMaxima').value = q.nota_maxima;
+
+      updateModalStatusButtonsUI(q.status);
+      document.getElementById('modalReview').classList.remove('hidden');
+    }
+
+    function closeModalReview() {
+      document.getElementById('modalReview').classList.add('hidden');
+      STATE.selectedQuestaoId = null;
+    }
+
+    function updateModalStatusButtonsUI(activeStatus) {
+      const btnC = document.getElementById('btnStatusCorreto');
+      const btnP = document.getElementById('btnStatusParcial');
+      const btnE = document.getElementById('btnStatusErrado');
+
+      // Reset
+      btnC.className = 'py-2 px-3 rounded-xl font-semibold border text-center transition-all flex items-center justify-center space-x-1 bg-slate-800 border-slate-700 text-slate-400';
+      btnP.className = 'py-2 px-3 rounded-xl font-semibold border text-center transition-all flex items-center justify-center space-x-1 bg-slate-800 border-slate-700 text-slate-400';
+      btnE.className = 'py-2 px-3 rounded-xl font-semibold border text-center transition-all flex items-center justify-center space-x-1 bg-slate-800 border-slate-700 text-slate-400';
+
+      if (activeStatus === 'correto') {
+        btnC.className = 'py-2 px-3 rounded-xl font-bold border text-center transition-all flex items-center justify-center space-x-1 bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-600/20';
+      } else if (activeStatus === 'parcial') {
+        btnP.className = 'py-2 px-3 rounded-xl font-bold border text-center transition-all flex items-center justify-center space-x-1 bg-amber-600 border-amber-500 text-white shadow-lg shadow-amber-600/20';
+      } else if (activeStatus === 'errado') {
+        btnE.className = 'py-2 px-3 rounded-xl font-bold border text-center transition-all flex items-center justify-center space-x-1 bg-red-600 border-red-500 text-white shadow-lg shadow-red-600/20';
+      }
+    }
+
+    function setQuestaoStatus(status) {
+      const q = STATE.currentAnalysis.questoes.find(item => item.id === STATE.selectedQuestaoId);
+      if (!q) return;
+
+      q.status = status;
+      updateModalStatusButtonsUI(status);
+
+      // Auto ajustar sugestão de nota se status mudar
+      if (status === 'correto') q.nota_obtida = q.nota_maxima;
+      else if (status === 'parcial') q.nota_obtida = q.nota_maxima / 2;
+      else if (status === 'errado') q.nota_obtida = 0;
+
+      document.getElementById('modalInputNotaObtida').value = q.nota_obtida;
+    }
+
+    function updateModalNotaObtida(val) {
+      const q = STATE.currentAnalysis.questoes.find(item => item.id === STATE.selectedQuestaoId);
+      if (q) q.nota_obtida = parseFloat(val) || 0;
+    }
+
+    function updateModalNotaMaxima(val) {
+      const q = STATE.currentAnalysis.questoes.find(item => item.id === STATE.selectedQuestaoId);
+      if (q) q.nota_maxima = parseFloat(val) || 0;
+    }
+
+    function saveModalChanges() {
+      updateTotalScoreUI();
+      drawBoundingBoxes();
+      closeModalReview();
+      showToast('Alterações da questão salvas!', 'success');
+    }
+
+    function updateTotalScoreUI() {
+      if (!STATE.currentAnalysis || !STATE.currentAnalysis.questoes) return;
+
+      const totalObtido = STATE.currentAnalysis.questoes.reduce((acc, q) => acc + (q.nota_obtida || 0), 0);
+      const totalMaximo = STATE.currentAnalysis.questoes.reduce((acc, q) => acc + (q.nota_maxima || 0), 0);
+
+      const perc = totalMaximo > 0 ? ((totalObtido / totalMaximo) * 100).toFixed(0) : 0;
+      document.getElementById('totalScoreDisplay').innerText = `${totalObtido.toFixed(1)} / ${totalMaximo.toFixed(1)} (${perc}%)`;
+    }
+
+    /* ==========================================================================
+       ABA 2: CARREGAMENTO DE GABARITO OPCIONAL (PDF / IMAGEM / TEXTO)
+       ========================================================================== */
+    function handleGabaritoFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const isPdf = file.type === 'application/pdf';
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        const fullBase64 = e.target.result;
+        const cleanBase64 = fullBase64.split(',')[1] || fullBase64;
+
+        STATE.gabaritoFile = {
+          base64: cleanBase64,
+          mimeType: file.type || (isPdf ? 'application/pdf' : 'image/jpeg'),
+          name: file.name,
+          isPdf: isPdf
+        };
+
+        // Atualizar visual da dropzone
+        document.getElementById('gabaritoEmptyView').classList.add('hidden');
+        document.getElementById('gabaritoLoadedView').classList.remove('hidden');
+        document.getElementById('gabaritoFileName').innerText = file.name;
+        document.getElementById('gabaritoFileType').innerText = isPdf ? 'Documento PDF' : 'Imagem de Gabarito';
+
+        updateModeBanner();
+        showToast('Gabarito anexado com sucesso!', 'success');
+      };
+
+      reader.readAsDataURL(file);
+    }
+
+    function removeGabaritoFile(event) {
+      if (event) event.stopPropagation();
+      STATE.gabaritoFile = null;
+      document.getElementById('fileGabaritoInput').value = '';
+
+      document.getElementById('gabaritoLoadedView').classList.add('hidden');
+      document.getElementById('gabaritoEmptyView').classList.remove('hidden');
+
+      updateModeBanner();
+      showToast('Arquivo de gabarito removido.', 'info');
+    }
+
+    function loadGabaritoExample() {
+      const ex = `Questão 1: Alternativa C (Vale 2.0 pt)
+Questão 2: Resposta deve explicar que 'a aceleração da gravidade é aproximadamente 9.8 m/s²'. (Vale 3.0 pt)
+Questão 3: Aceitar cálculos com arredondamento. (Vale 5.0 pt)`;
+      document.getElementById('gabaritoText').value = ex;
+      STATE.gabaritoTexto = ex;
+      updateModeBanner();
+    }
+
+    function clearGabaritoText() {
+      document.getElementById('gabaritoText').value = '';
+      STATE.gabaritoTexto = '';
+      updateModeBanner();
+    }
+
+    /* ==========================================================================
+       ABA 3: DIÁRIO DE NOTAS E CÁLCULO ESTATÍSTICO COMPLETO
+       ========================================================================== */
+    function saveCurrentToDiario() {
+      if (!STATE.currentAnalysis) {
+        showToast('Nenhuma prova analisada para salvar!', 'warning');
+        return;
+      }
+
+      const nomeAluno = document.getElementById('inputAlunoName').value.trim() || 'Aluno sem nome';
+      const totalObtido = STATE.currentAnalysis.questoes.reduce((acc, q) => acc + (q.nota_obtida || 0), 0);
+      const totalMaximo = STATE.currentAnalysis.questoes.reduce((acc, q) => acc + (q.nota_maxima || 0), 0);
+
+      const novoRegistro = {
+        id: 'reg_' + Date.now(),
+        dataHora: new Date().toLocaleString('pt-BR'),
+        aluno: nomeAluno,
+        notaObtida: totalObtido,
+        notaMaxima: totalMaximo,
+        questoes: STATE.currentAnalysis.questoes
+      };
+
+      STATE.diario.unshift(novoRegistro);
+      localStorage.setItem('gemini_corretor_diario', JSON.stringify(STATE.diario));
+
+      renderDiarioTable();
+      showToast(`Prova de ${nomeAluno} salva no Diário!`, 'success');
+      switchTab('diario');
+    }
+
+    function renderDiarioTable() {
+      const tbody = document.getElementById('diarioTableBody');
+      const emptyState = document.getElementById('diarioEmptyState');
+
+      if (STATE.diario.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        calculateAndRenderStats([]);
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      tbody.innerHTML = STATE.diario.map(item => {
+        const perc = item.notaMaxima > 0 ? ((item.notaObtida / item.notaMaxima) * 100) : 0;
+        let badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+        if (perc < 50) badgeColor = 'bg-red-500/10 text-red-400 border-red-500/20';
+        else if (perc < 70) badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+
+        return `
+          <tr class="hover:bg-slate-800/40 transition-colors">
+            <td class="p-3 font-semibold text-white">${escapeHtml(item.aluno)}</td>
+            <td class="p-3 text-center font-bold">${item.notaObtida.toFixed(1)} / ${item.notaMaxima.toFixed(1)}</td>
+            <td class="p-3 text-center">
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-bold border ${badgeColor}">
+                ${perc.toFixed(0)}%
+              </span>
+            </td>
+            <td class="p-3 text-center text-slate-400 text-xs">${item.dataHora}</td>
+            <td class="p-3 text-right">
+              <button onclick="deleteDiarioItem('${item.id}')" class="text-red-400 hover:text-red-300 p-1 rounded hover:bg-red-500/10 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      calculateAndRenderStats(STATE.diario);
+    }
+
+    function deleteDiarioItem(id) {
+      STATE.diario = STATE.diario.filter(item => item.id !== id);
+      localStorage.setItem('gemini_corretor_diario', JSON.stringify(STATE.diario));
+      renderDiarioTable();
+      showToast('Registro excluído.', 'info');
+    }
+
+    function clearDiarioHistory() {
+      if (confirm('Tem certeza que deseja apagar todo o diário de notas?')) {
+        STATE.diario = [];
+        localStorage.setItem('gemini_corretor_diario', JSON.stringify([]));
+        renderDiarioTable();
+        showToast('Diário zerado.', 'info');
+      }
+    }
+
+    /* ==========================================================================
+       CÁLCULOS ESTATÍSTICOS RIGOROSOS (MÉDIA, MEDIANA, MODA, DESVIO PADRÃO)
+       ========================================================================== */
+    function calculateAndRenderStats(data) {
+      const totalEl = document.getElementById('statTotalProvas');
+      const mediaEl = document.getElementById('statMedia');
+      const medianaEl = document.getElementById('statMediana');
+      const modaEl = document.getElementById('statModa');
+      const desvioEl = document.getElementById('statDesvioPadrao');
+
+      if (data.length === 0) {
+        totalEl.innerText = '0';
+        mediaEl.innerText = '0.0';
+        medianaEl.innerText = '0.0';
+        modaEl.innerText = 'N/A';
+        desvioEl.innerText = '0.00';
+        return;
+      }
+
+      const notas = data.map(d => d.notaObtida);
+      const N = notas.length;
+      totalEl.innerText = N;
+
+      // 1. Média
+      const soma = notas.reduce((acc, val) => acc + val, 0);
+      const media = soma / N;
+      mediaEl.innerText = media.toFixed(1);
+
+      // 2. Mediana
+      const sorted = [...notas].sort((a, b) => a - b);
+      let mediana = 0;
+      if (N % 2 === 1) {
+        mediana = sorted[Math.floor(N / 2)];
+      } else {
+        const m1 = sorted[N / 2 - 1];
+        const m2 = sorted[N / 2];
+        mediana = (m1 + m2) / 2;
+      }
+      medianaEl.innerText = mediana.toFixed(1);
+
+      // 3. Moda (Unimodal, Multimodal, Amodal)
+      const freqMap = {};
+      notas.forEach(n => {
+        const key = n.toFixed(1);
+        freqMap[key] = (freqMap[key] || 0) + 1;
+      });
+
+      let maxFreq = 0;
+      for (const k in freqMap) {
+        if (freqMap[k] > maxFreq) maxFreq = freqMap[k];
+      }
+
+      const keysWithMaxFreq = Object.keys(freqMap).filter(k => freqMap[k] === maxFreq);
+
+      if (maxFreq === 1 || keysWithMaxFreq.length === Object.keys(freqMap).length) {
+        modaEl.innerText = 'Amodal';
+      } else if (keysWithMaxFreq.length === 1) {
+        modaEl.innerText = `${keysWithMaxFreq[0]}`;
+      } else {
+        modaEl.innerText = keysWithMaxFreq.join(', ');
+      }
+
+      // 4. Desvio Padrão Populacional (divisão por N)
+      const variancia = notas.reduce((acc, val) => acc + Math.pow(val - media, 2), 0) / N;
+      const desvioPadrao = Math.sqrt(variancia);
+      desvioEl.innerText = desvioPadrao.toFixed(2);
+    }
+
+    /* ==========================================================================
+       EXPORTAÇÃO PARA CSV (EXCEL BRASILEIRO COM SEPARADOR E BOM UTF-8)
+       ========================================================================== */
+    function exportToCSV() {
+      if (STATE.diario.length === 0) {
+        showToast('Nenhum dado no diário para exportar!', 'warning');
+        return;
+      }
+
+      // Cabeçalhos CSV
+      let csvContent = "\uFEFF"; // BOM UTF-8 para Excel abrir sem caracteres estranhos
+      csvContent += "Aluno;Nota Obtida;Nota Maxima;Aproveitamento (%);Data Hora\n";
+
+      STATE.diario.forEach(item => {
+        const perc = item.notaMaxima > 0 ? ((item.notaObtida / item.notaMaxima) * 100).toFixed(1) : "0,0";
+        const nObtidaStr = item.notaObtida.toFixed(1).replace('.', ',');
+        const nMaxStr = item.notaMaxima.toFixed(1).replace('.', ',');
+        const percStr = perc.toString().replace('.', ',');
+
+        csvContent += `"${item.aluno.replace(/"/g, '""')}";${nObtidaStr};${nMaxStr};${percStr};"${item.dataHora}"\n`;
+      });
+
+      // Adicionar Resumo Estatístico no Final do CSV
+      const notas = STATE.diario.map(d => d.notaObtida);
+      const N = notas.length;
+      const soma = notas.reduce((acc, v) => acc + v, 0);
+      const media = soma / N;
+
+      csvContent += `\nRESUMO ESTATISTICO DA TURMA\n`;
+      csvContent += `Total de Alunos;${N}\n`;
+      csvContent += `Media da Turma;${media.toFixed(2).replace('.', ',')}\n`;
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `diario_de_notas_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast('Arquivo CSV exportado para o Excel!', 'success');
+    }
+
+    /* ==========================================================================
+       UTILITÁRIOS (TOASTS, HELPERS)
+       ========================================================================== */
+    function showLoadingOverlay(show, text = 'Carregando...') {
+      const overlay = document.getElementById('loadingOverlay');
+      const label = document.getElementById('loadingOverlayText');
+      label.innerText = text;
+      if (show) overlay.classList.remove('hidden');
+      else overlay.classList.add('hidden');
+    }
+
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toastNotification');
+      const toastText = document.getElementById('toastText');
+      const toastIcon = document.getElementById('toastIcon');
+
+      toastText.innerText = message;
+      if (type === 'success') toastIcon.innerText = '✅';
+      else if (type === 'error') toastIcon.innerText = '❌';
+      else if (type === 'warning') toastIcon.innerText = '⚠️';
+      else toastIcon.innerText = 'ℹ️';
+
+      toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+      }, 3500);
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+  </script>
 </body>
 </html>
